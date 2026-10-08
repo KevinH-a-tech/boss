@@ -18,6 +18,8 @@
    ===================================================================== */
 window.BOSS_CONFIG = {
   adminEmail: "admin@ujbguild.com",
+  // 스크린샷 자동 읽기에 쓸 Gemini 모델 (앞에서부터 순서대로 시도)
+  aiModels: ["gemini-flash-latest", "gemini-3.5-flash", "gemini-3.1-flash-lite"],
   firebase: {
     apiKey: "AIzaSyCar8GbRTMHXIEFNSp1vBVwXv9izGftNXA",
     authDomain: "zeus-boss-timer-311af.firebaseapp.com",
@@ -408,6 +410,55 @@ if (CFG.firebase && CFG.firebase.apiKey && window.firebase) {
   } catch (e) { LIVE = false; conn = "preview"; }
 }
 if (!LIVE) { try { admin = sessionStorage.getItem("boss-admin") === "1"; } catch (e) {} }
+
+/* ---------- screenshot reading via Firebase AI Logic (Gemini Developer API, plain fetch) ---------- */
+if (LIVE) {
+  var AI_HOST = "https://firebasevertexai.googleapis.com/v1beta/projects/" + encodeURIComponent(CFG.firebase.projectId) + "/models/";
+  var fileToB64 = function(f){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onload = function(){ res(String(r.result).split(",")[1]); };
+      r.onerror = rej;
+      r.readAsDataURL(f);
+    });
+  };
+  var callModel = function(name, parts){
+    return fetch(AI_HOST + encodeURIComponent(name) + ":generateContent", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": CFG.firebase.apiKey,
+        "X-Firebase-Appid": CFG.firebase.appId,
+        "x-goog-api-client": "gl-js/2.16.0 fire/2.16.0"
+      },
+      body: JSON.stringify({ contents: [{ role: "user", parts: parts }], generationConfig: { responseMimeType: "application/json", temperature: 0 } })
+    }).then(function(r){
+      return r.json().catch(function(){ return {}; }).then(function(j){
+        if (!r.ok) { var e = new Error((j.error && j.error.message) || ("HTTP " + r.status)); e.status = r.status; e.code = j.error && j.error.status; throw e; }
+        var c = j.candidates && j.candidates[0], ps = (c && c.content && c.content.parts) || [];
+        return ps.map(function(p){ return p.text || ""; }).join("");
+      });
+    });
+  };
+  window.BOSS_AI = {
+    read: function(files, prompt){
+      return Promise.all(files.map(function(f){
+        return fileToB64(f).then(function(d){ return { inlineData: { mimeType: f.type || "image/png", data: d } }; });
+      })).then(function(imgs){
+        var parts = [{ text: prompt }].concat(imgs), models = (CFG.aiModels || ["gemini-flash-latest"]).slice(), lastErr = null;
+        var next = function(){
+          if (!models.length) return Promise.reject(lastErr || new Error("no model"));
+          return callModel(models.shift(), parts).catch(function(e){
+            lastErr = e;
+            if (e.status === 429 || (e.status === 403 && /not been used|disabled|not enabled/i.test(e.message))) throw e;
+            return next();
+          });
+        };
+        return next();
+      });
+    }
+  };
+}
 try { var tb = sessionStorage.getItem("boss-tab"); if (tb) tab = tb; } catch (e) {}
 
 
@@ -718,16 +769,16 @@ function timeDlg(b){
   var mode = "rel";
   openPanel('<h3>' + esc(b.name) + ' 시간 수정</h3>' +
     '<div class="seg" role="group" style="margin-top:10px"><button type="button" data-m="rel" aria-pressed="true">남은 시간으로</button><button type="button" data-m="abs" aria-pressed="false">출현 시각으로</button></div>' +
-    '<div id="mRel"><label class="l">지금부터 몇 시간 몇 분 후 출현?</label><div class="r2"><input class="field" type="number" id="rh" min="0" max="99" value="0"> 시간 <input class="field" type="number" id="rm" min="0" max="59" value="0"> 분</div></div>' +
-    '<div id="mAbs" hidden><label class="l">출현 시각 (한국 시간)</label><div class="r2"><input class="field" type="date" id="ad" value="' + dateV + '"><input class="field" type="time" id="at" value="' + hm(cur) + '"></div></div>' +
+    '<div id="mRel"><label class="l">지금부터 몇 시간 몇 분 몇 초 후 출현?</label><div class="r2"><input class="field" type="number" id="rh" min="0" max="99" value="0" aria-label="시간"> 시간 <input class="field" type="number" id="rm" min="0" max="59" value="0" aria-label="분"> 분 <input class="field" type="number" id="rs" min="0" max="59" value="0" aria-label="초"> 초</div></div>' +
+    '<div id="mAbs" hidden><label class="l">출현 시각 (한국 시간)</label><div class="r2"><input class="field" type="date" id="ad" value="' + dateV + '"><input class="field" type="time" id="at" step="1" value="' + hm(cur) + ':' + pad(k(cur).getUTCSeconds()) + '"></div></div>' +
     '<label class="l">리젠 주기</label><div class="r2"><input class="field" type="number" id="ih" min="0" max="99" value="' + (b.interval ? Math.floor(b.interval / 60) : "") + '"> 시간 <input class="field" type="number" id="im" min="0" max="59" value="' + (b.interval ? b.interval % 60 : "") + '"> 분</div>' +
     '<div class="err" id="tErr"></div>', "적용", function(){
       var at;
-      if (mode === "rel") at = Math.round((Date.now() + (+document.getElementById("rh").value || 0) * H + (+document.getElementById("rm").value || 0) * M) / M) * M;
+      if (mode === "rel") at = Math.round((Date.now() + (+document.getElementById("rh").value || 0) * H + (+document.getElementById("rm").value || 0) * M + (+document.getElementById("rs").value || 0) * 1000) / 1000) * 1000;
       else {
         var dv = document.getElementById("ad").value, tv = document.getElementById("at").value;
         if (!dv || !tv) { document.getElementById("tErr").textContent = "날짜와 시각을 모두 입력하세요."; return false; }
-        var p = dv.split("-"), q = tv.split(":"); at = Date.UTC(+p[0], +p[1] - 1, +p[2], +q[0], +q[1]) - KST;
+        var p = dv.split("-"), q = tv.split(":"); at = Date.UTC(+p[0], +p[1] - 1, +p[2], +q[0], +q[1], +(q[2] || 0)) - KST;
       }
       var iv = (+document.getElementById("ih").value || 0) * 60 + (+document.getElementById("im").value || 0);
       b.interval = iv > 0 ? iv : null; b.anchor = at; b.alive = false;
@@ -763,7 +814,13 @@ function shotDlg(){
     var fs = Array.prototype.slice.call(e.target.files || []);
     if (!fs.length) return;
     shot.files = fs;
-    document.getElementById("shotThumbs").innerHTML = fs.map(function(f){ return '<img alt="' + esc(f.name) + '" src="' + URL.createObjectURL(f) + '">'; }).join("");
+    var thumbs = document.getElementById("shotThumbs");
+    thumbs.innerHTML = fs.map(function(f, i){ return '<img alt="' + esc(f.name) + '" data-i="' + i + '">'; }).join("");
+    fs.forEach(function(f, i){
+      var r = new FileReader();
+      r.onload = function(){ var im = thumbs.querySelector('img[data-i="' + i + '"]'); if (im) im.src = r.result; };
+      r.readAsDataURL(f);
+    });
     var g = guessTime(fs[0]); shot.base = g.t; shot.src = g.src;
     stepConfirm();
   });
@@ -780,8 +837,34 @@ function stepManualTime(){
     '<div class="foot" style="justify-content:flex-start"><button class="btn primary" type="button" data-s="settime">이 시각으로 진행</button></div>');
 }
 function respawnBosses(){ return state.bosses.filter(function(b){ return b.type === "respawn"; }); }
+var MANUAL_MSG = "스크린샷을 보면서 보스별로 '○시간 ○분 후 출현'의 숫자를 입력하세요. 출현 중인 보스는 '출현 중'을 체크하세요. 이미지를 누르면 크게 볼 수 있어요.";
 function stepRead(){
-  stepTable({}, "스크린샷을 보면서 보스별로 '○시간 ○분 후 출현'의 숫자를 입력하세요. 출현 중인 보스는 '출현 중'을 체크하세요. 이미지를 누르면 크게 볼 수 있어요.");
+  if (!window.BOSS_AI) { stepTable({}, (LIVE ? "자동 읽기를 준비하지 못했어요. 페이지를 새로고침(Ctrl + F5)한 뒤 다시 시도해 주세요. " : "미리보기 모드라 자동 읽기를 쓸 수 없어요. ") + MANUAL_MSG); return; }
+  step('<div class="ask"><span class="spin"></span>스크린샷에서 보스 시간을 읽는 중이에요. 10~30초 정도 걸려요.</div>');
+  var list = respawnBosses().map(function(b){ return b.id + ": Lv." + b.lv + " " + b.name + " (" + RNAME[b.region] + ")"; }).join("\n");
+  var prompt = "첨부 이미지는 모바일 게임 '제우스: 오만의신'의 '콘텐츠 현황판' 캡처입니다. 각 보스 카드 왼쪽 아래에 'N시간 M분 후 출현', 'M분 후 출현', '출현 중' 같은 상태가 적혀 있습니다. '수요일 21시 출현'처럼 요일이 적힌 고정 일정 보스는 무시하세요.\n" +
+    "아래 목록의 보스 각각에 대해 이미지에서 읽은 상태를 알려주세요. 카드의 보스 이름이 정확히 같은 경우만 대응시키세요. '봉인된 아모르포스'와 '아모르포스'는 서로 다른 보스입니다. 이미지에 없는 보스는 status를 missing으로 하세요.\n\n" +
+    "보스 목록 (id: 이름):\n" + list + "\n\n" +
+    "JSON 배열로만 답하세요. 예: [{\"id\":\"bedix\",\"status\":\"timer\",\"hours\":1,\"minutes\":43},{\"id\":\"giant\",\"status\":\"live\"},{\"id\":\"alastor\",\"status\":\"missing\"}]";
+  window.BOSS_AI.read(shot.files, prompt).then(function(text){
+    var t = String(text || "").replace(/```json|```/g, "").trim();
+    var i = t.indexOf("["), j = t.lastIndexOf("]");
+    var arr = JSON.parse(i >= 0 && j > i ? t.slice(i, j + 1) : t);
+    var found = {};
+    (Array.isArray(arr) ? arr : []).forEach(function(r){
+      if (r && r.id && (r.status === "timer" || r.status === "live") && !found[r.id]) found[r.id] = r;
+    });
+    var n = Object.keys(found).length;
+    stepTable(found, n ? n + "마리 보스의 시간을 읽었어요. 스크린샷과 비교해서 틀린 곳은 고친 뒤 적용하세요." : "보스 시간을 찾지 못했어요. " + MANUAL_MSG);
+  }).catch(function(e){
+    console.warn(e);
+    var m = String((e && ((e.code || "") + " " + (e.message || ""))) || ""), st = e && e.status;
+    var why = (st === 429 || /quota|resource_exhausted/i.test(m)) ? "오늘 무료 사용량을 다 썼거나 요청이 많아요" :
+              (st === 403 || /not enabled|disabled|has not been used|permission/i.test(m)) ? "Firebase 콘솔에서 AI Logic(Gemini Developer API)이 켜져 있는지 확인해 주세요" :
+              /failed to fetch|network/i.test(m) ? "인터넷 연결 또는 브라우저 차단 설정을 확인해 주세요" :
+              "자동 읽기에 실패했어요";
+    stepTable({}, why + " (" + m.trim().slice(0, 120) + "). " + MANUAL_MSG);
+  });
 }
 function stepTable(found, msg){
   var rows = respawnBosses().map(function(b){
