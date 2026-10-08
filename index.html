@@ -364,6 +364,17 @@ footer{color:var(--faint)}
 .hero.urgent .ring .big,.hero.urgent .at{color:#ff6a5c}
 .hero.urgent{border-color:rgba(255,92,80,.4)}
 
+.res-list{margin-top:10px}
+.res-sec{font-weight:700;padding:16px 0 6px;font-size:15px}
+.res-sec .hint{font-weight:400;margin-left:6px}
+.res-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:6px 10px;align-items:center;padding:10px 0;border-top:1px solid rgba(255,235,200,.07)}
+.res-row .ap{width:18px;height:18px;margin:0}
+.res-row .rn{font-size:14px;min-width:0}
+.res-row .when{text-align:right;font-size:13px;font-weight:700;color:#f0c77a;white-space:nowrap}
+.res-row .inp{grid-column:2/4;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:#9f9584}
+.res-row .inp input[type=number]{width:58px;padding:6px 8px}
+.res-row .lvl{display:inline-flex;align-items:center;gap:4px;margin-left:6px;white-space:nowrap}
+
 @media (max-width:420px){
   .hero{gap:14px;padding:18px 16px}
   .ring{width:112px;height:112px}
@@ -495,9 +506,22 @@ function ivLabel(min){
   var h = Math.floor(min / 60), m = min % 60;
   return "리젠 " + (h ? h + "시간" : "") + (m ? " " + m + "분" : "");
 }
+var DAYCH = "일월화수목금토";
+function hourText(b){ return b.hours.join("·") + "시" + (b.minute ? " " + b.minute + "분" : ""); }
+function daysText(days){ return days.length === 7 ? "매일" : days.slice().sort().map(function(d){ return DAYCH[d]; }).join(","); }
 function fixedLabel(b){
-  if (b.days.length === 7) return "매일 " + b.hours.join("·") + "시";
-  return b.days.map(function(d){ return WD[d]; }).join("·") + " " + b.hours[0] + "시";
+  if (b.days.length === 7) return "매일 " + hourText(b);
+  return b.days.map(function(d){ return WD[d]; }).join("·") + " " + hourText(b);
+}
+function parseDays(t){
+  t = String(t || "").replace(/요일/g, "");
+  if (/매일|everyday/i.test(t)) return [0,1,2,3,4,5,6];
+  var out = [];
+  for (var i = 0; i < t.length; i++) { var d = DAYCH.indexOf(t[i]); if (d >= 0 && out.indexOf(d) < 0) out.push(d); }
+  return out.sort();
+}
+function parseHours(t){
+  return String(t == null ? "" : t).split(/[^0-9]+/).filter(function(x){ return x !== ""; }).map(Number).filter(function(h){ return h >= 0 && h <= 23; });
 }
 
 function occ(b, t){
@@ -505,7 +529,7 @@ function occ(b, t){
   for (var i = -2; i <= 8; i++) {
     var day = base + i * D, wd = k(day).getUTCDay();
     if (b.days.indexOf(wd) < 0) continue;
-    for (var j = 0; j < b.hours.length; j++) out.push(day + b.hours[j] * H);
+    for (var j = 0; j < b.hours.length; j++) out.push(day + b.hours[j] * H + (b.minute || 0) * M);
   }
   return out.sort(function(a, c){ return a - c; });
 }
@@ -562,6 +586,7 @@ function rowHtml(b, c, now){
     h += '<div class="acts">';
     h += '<button class="sw" role="switch" aria-checked="' + b.enabled + '" data-act="toggle" data-id="' + b.id + '"><span class="knob"></span>알림 ' + (b.enabled ? "켜짐" : "꺼짐") + '</button>';
     if (!b.enabled) h += '<input class="field" type="text" maxlength="60" data-note="' + b.id + '" value="' + esc(b.note || "") + '" placeholder="안내 문구 (예: 통제로 인해 불가)" aria-label="' + esc(b.name) + ' 안내 문구">';
+    if (b.type === "fixed") h += '<button class="btn" data-act="ftime" data-id="' + b.id + '">시간 수정</button>';
     if (b.type === "respawn") h += '<button class="btn" data-act="kill" data-id="' + b.id + '">처치 완료</button><button class="btn" data-act="time" data-id="' + b.id + '">시간 수정</button>';
     h += '</div>';
   }
@@ -621,7 +646,7 @@ function render(){
 
   if (admin) {
     h += '<section class="admin-panel glass"><h2>관리자 도구</h2>';
-    h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button></div>';
+    h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button>' + (LIVE ? '<button class="btn big" data-act="pwchange">비밀번호 변경</button>' : '') + '</div>';
     h += '<div class="line"><select class="field" id="bulkRegion" aria-label="지역">' + REGIONS.slice(1).map(function(r){ return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join("") + '</select>';
     h += '<input class="field" type="text" id="bulkNote" maxlength="60" placeholder="지역 안내 문구" style="flex:1;min-width:150px" aria-label="지역 안내 문구">';
     h += '<button class="btn" data-act="bulkoff">지역 전체 끄기</button><button class="btn" data-act="bulkon">지역 전체 켜기</button></div>';
@@ -763,6 +788,54 @@ function loginDlg(){
   });
 }
 
+function pwDlg(){
+  openPanel('<h3>비밀번호 변경</h3><p class="hint">새 비밀번호는 6자 이상이어야 해요.</p>' +
+    '<label class="l" for="pwOld">현재 비밀번호</label><input class="field" type="password" id="pwOld" autocomplete="current-password" style="width:100%">' +
+    '<label class="l" for="pwNew">새 비밀번호</label><input class="field" type="password" id="pwNew" autocomplete="new-password" style="width:100%">' +
+    '<label class="l" for="pwNew2">새 비밀번호 확인</label><input class="field" type="password" id="pwNew2" autocomplete="new-password" style="width:100%">' +
+    '<div class="alert" id="pwErr" role="alert" hidden></div>', "변경", function(){
+    var oldPw = document.getElementById("pwOld").value, n1 = document.getElementById("pwNew").value, n2 = document.getElementById("pwNew2").value;
+    var er = document.getElementById("pwErr");
+    var fail = function(msg){ er.textContent = msg; er.hidden = true; void er.offsetWidth; er.hidden = false; };
+    if (!oldPw) { fail("현재 비밀번호를 입력해 주세요."); return false; }
+    if (n1.length < 6) { fail("새 비밀번호는 6자 이상이어야 해요."); return false; }
+    if (n1 !== n2) { fail("새 비밀번호가 서로 달라요. 다시 확인해 주세요."); return false; }
+    var u = auth.currentUser;
+    if (!u) { fail("로그인 정보가 없어요. 다시 로그인해 주세요."); return false; }
+    var btn = dlg.querySelector('[data-d="ok"]'); btn.disabled = true; btn.textContent = "변경 중…";
+    var cred = firebase.auth.EmailAuthProvider.credential(u.email, oldPw);
+    u.reauthenticateWithCredential(cred).then(function(){ return u.updatePassword(n1); }).then(function(){
+      closeDlg(); toast("비밀번호를 변경했습니다. 다음 로그인부터 새 비밀번호를 쓰세요.", "ok");
+    }).catch(function(err){
+      btn.disabled = false; btn.textContent = "변경";
+      var c = err && err.code;
+      if (c === "auth/wrong-password" || c === "auth/invalid-credential" || c === "auth/invalid-login-credentials") fail("현재 비밀번호가 틀렸습니다.");
+      else if (c === "auth/weak-password") fail("새 비밀번호가 너무 쉬워요. 6자 이상으로 정해 주세요.");
+      else if (c === "auth/too-many-requests") fail("시도가 너무 많아요. 잠시 후 다시 시도해 주세요.");
+      else fail("변경하지 못했어요 (" + (c || "오류") + ").");
+    });
+    return false;
+  });
+}
+
+function fixedDlg(b){
+  var boxes = [1,2,3,4,5,6,0].map(function(d){
+    return '<label style="display:inline-flex;align-items:center;gap:4px;margin:0 10px 6px 0;font-size:14px"><input type="checkbox" class="fd" value="' + d + '"' + (b.days.indexOf(d) >= 0 ? " checked" : "") + '> ' + WD[d] + '</label>';
+  }).join("");
+  openPanel('<h3>' + esc(b.name) + ' 시간 수정</h3><p class="hint">요일과 시각이 정해진 보스예요. 출현 요일과 시각을 고르세요.</p>' +
+    '<label class="l">출현 요일</label><div>' + boxes + '</div>' +
+    '<label class="l">출현 시각 (여러 번이면 쉼표로: 0,12,18)</label><div class="r2"><input class="field" type="text" id="fh" value="' + b.hours.join(",") + '" style="width:120px" aria-label="시"> 시 <input class="field" type="number" id="fm" min="0" max="59" value="' + (b.minute || 0) + '" aria-label="분"> 분</div>' +
+    '<div class="err" id="fErr"></div>', "적용", function(){
+      var days = Array.prototype.map.call(dlg.querySelectorAll(".fd:checked"), function(x){ return +x.value; }).sort();
+      var hours = parseHours(document.getElementById("fh").value), mi = Math.max(0, Math.min(59, +document.getElementById("fm").value || 0));
+      if (!days.length) { document.getElementById("fErr").textContent = "요일을 하나 이상 골라 주세요."; return false; }
+      if (!hours.length) { document.getElementById("fErr").textContent = "시각을 0~23 사이 숫자로 입력해 주세요."; return false; }
+      b.days = days; b.hours = hours; b.minute = mi;
+      touch();
+      toast(b.name + " 시간을 " + fixedLabel(b) + "(으)로 바꿨습니다. 저장을 눌러 주세요.", "ok");
+    });
+}
+
 function timeDlg(b){
   var now = Date.now(), c = compute(b, now), cur = c.st === "up" ? c.at : now, d = k(cur);
   var dateV = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate());
@@ -837,25 +910,29 @@ function stepManualTime(){
     '<div class="foot" style="justify-content:flex-start"><button class="btn primary" type="button" data-s="settime">이 시각으로 진행</button></div>');
 }
 function respawnBosses(){ return state.bosses.filter(function(b){ return b.type === "respawn"; }); }
-var MANUAL_MSG = "스크린샷을 보면서 보스별로 '○시간 ○분 후 출현'의 숫자를 입력하세요. 출현 중인 보스는 '출현 중'을 체크하세요. 이미지를 누르면 크게 볼 수 있어요.";
+function fixedBosses(){ return state.bosses.filter(function(b){ return b.type === "fixed"; }); }
+var MANUAL_MSG = "스크린샷을 보면서 보스별 시간을 직접 입력하세요. 입력한 보스는 자동으로 체크돼요. 이미지를 누르면 크게 볼 수 있어요.";
 function stepRead(){
   if (!window.BOSS_AI) { stepTable({}, (LIVE ? "자동 읽기를 준비하지 못했어요. 페이지를 새로고침(Ctrl + F5)한 뒤 다시 시도해 주세요. " : "미리보기 모드라 자동 읽기를 쓸 수 없어요. ") + MANUAL_MSG); return; }
   step('<div class="ask"><span class="spin"></span>스크린샷에서 보스 시간을 읽는 중이에요. 10~30초 정도 걸려요.</div>');
-  var list = respawnBosses().map(function(b){ return b.id + ": Lv." + b.lv + " " + b.name + " (" + RNAME[b.region] + ")"; }).join("\n");
-  var prompt = "첨부 이미지는 모바일 게임 '제우스: 오만의신'의 '콘텐츠 현황판' 캡처입니다. 각 보스 카드 왼쪽 아래에 'N시간 M분 후 출현', 'M분 후 출현', '출현 중' 같은 상태가 적혀 있습니다. '수요일 21시 출현'처럼 요일이 적힌 고정 일정 보스는 무시하세요.\n" +
-    "아래 목록의 보스 각각에 대해 이미지에서 읽은 상태를 알려주세요. 카드의 보스 이름이 정확히 같은 경우만 대응시키세요. '봉인된 아모르포스'와 '아모르포스'는 서로 다른 보스입니다. 이미지에 없는 보스는 status를 missing으로 하세요.\n\n" +
+  var list = state.bosses.map(function(b){ return b.id + ": " + (b.lv ? "Lv." + b.lv + " " : "") + b.name + " (" + RNAME[b.region] + ", " + (b.type === "fixed" ? "고정 출현" : "리젠") + ")"; }).join("\n");
+  var prompt = "첨부 이미지는 모바일 게임 '제우스: 오만의신'의 '콘텐츠 현황판' 캡처입니다. 각 보스 카드 왼쪽 아래에 출현 정보가 적혀 있습니다.\n" +
+    "- 'N시간 M분 후 출현', 'M분 후 출현', 'N시간 후 출현' → status \"timer\", hours, minutes (없는 값은 0)\n" +
+    "- '출현 중' → status \"live\"\n" +
+    "- '수요일 21시 출현', '매일 0시, 12시, 18시 출현'처럼 요일/시각이 적힌 경우 → status \"fixed\", days(예: \"수\", \"월,목\", \"매일\"), hours(예: \"21\", \"0,12,18\"), minute(없으면 0)\n" +
+    "아래 목록의 보스 각각에 대해 이미지에서 읽은 내용을 알려주세요. 카드의 보스 이름이 정확히 같은 경우만 대응시키세요. '봉인된 아모르포스'와 '아모르포스'는 서로 다른 보스입니다. '심연의 틈'처럼 같은 이름의 카드가 여러 개면 한 번만 답하세요. 이미지에 없는 보스는 status를 \"missing\"으로 하세요.\n\n" +
     "보스 목록 (id: 이름):\n" + list + "\n\n" +
-    "JSON 배열로만 답하세요. 예: [{\"id\":\"bedix\",\"status\":\"timer\",\"hours\":1,\"minutes\":43},{\"id\":\"giant\",\"status\":\"live\"},{\"id\":\"alastor\",\"status\":\"missing\"}]";
+    "JSON 배열로만 답하세요. 예: [{\"id\":\"bedix\",\"status\":\"timer\",\"hours\":1,\"minutes\":43},{\"id\":\"giant\",\"status\":\"live\"},{\"id\":\"arachne\",\"status\":\"fixed\",\"days\":\"수\",\"hours\":\"21\",\"minute\":0},{\"id\":\"alastor\",\"status\":\"missing\"}]";
   window.BOSS_AI.read(shot.files, prompt).then(function(text){
     var t = String(text || "").replace(/```json|```/g, "").trim();
     var i = t.indexOf("["), j = t.lastIndexOf("]");
     var arr = JSON.parse(i >= 0 && j > i ? t.slice(i, j + 1) : t);
     var found = {};
     (Array.isArray(arr) ? arr : []).forEach(function(r){
-      if (r && r.id && (r.status === "timer" || r.status === "live") && !found[r.id]) found[r.id] = r;
+      if (r && r.id && (r.status === "timer" || r.status === "live" || r.status === "fixed") && !found[r.id] && find(r.id)) found[r.id] = r;
     });
     var n = Object.keys(found).length;
-    stepTable(found, n ? n + "마리 보스의 시간을 읽었어요. 스크린샷과 비교해서 틀린 곳은 고친 뒤 적용하세요." : "보스 시간을 찾지 못했어요. " + MANUAL_MSG);
+    stepTable(found, n ? n + "마리 보스를 읽어서 체크해 두었어요. 스크린샷과 비교해 틀린 곳만 고친 뒤 아래 '체크한 보스 저장'을 누르세요." : "보스 시간을 찾지 못했어요. " + MANUAL_MSG);
   }).catch(function(e){
     console.warn(e);
     var m = String((e && ((e.code || "") + " " + (e.message || ""))) || ""), st = e && e.status;
@@ -867,49 +944,81 @@ function stepRead(){
   });
 }
 function stepTable(found, msg){
-  var rows = respawnBosses().map(function(b){
+  function respRow(b){
     var r = found[b.id] || {}, live = r.status === "live", timer = r.status === "timer";
-    return '<tr data-b="' + b.id + '"><td><input type="checkbox" class="ap" aria-label="' + esc(b.name) + ' 적용"' + (live || timer ? " checked" : "") + '></td>' +
-      '<td><b>' + esc(b.name) + '</b><div class="hint" style="margin:0">' + RNAME[b.region] + '</div></td>' +
-      '<td style="white-space:nowrap"><input class="field rh" type="number" min="0" max="99" value="' + (timer ? (+r.hours || 0) : "") + '" aria-label="시간">시 <input class="field rm" type="number" min="0" max="59" value="' + (timer ? (+r.minutes || 0) : "") + '" aria-label="분">분</td>' +
-      '<td><label style="white-space:nowrap;font-size:12px"><input type="checkbox" class="lv"' + (live ? " checked" : "") + '> 출현 중</label></td>' +
-      '<td class="when num"></td></tr>';
-  }).join("");
+    return '<div class="res-row" data-b="' + b.id + '" data-t="r"><input type="checkbox" class="ap" aria-label="' + esc(b.name) + ' 저장"' + (live || timer ? " checked" : "") + '>' +
+      '<div class="rn"><b>' + esc(b.name) + '</b> <span class="hint">' + RNAME[b.region] + '</span></div><div class="when num"></div>' +
+      '<div class="inp"><input class="field rh" type="number" min="0" max="99" value="' + (timer ? (+r.hours || 0) : "") + '" aria-label="시간"> 시간 <input class="field rm" type="number" min="0" max="59" value="' + (timer ? (+r.minutes || 0) : "") + '" aria-label="분"> 분 후 ' +
+      '<label class="lvl"><input type="checkbox" class="lv"' + (live ? " checked" : "") + '> 출현 중</label></div></div>';
+  }
+  function fixRow(b){
+    var r = found[b.id] || {}, hit = r.status === "fixed";
+    var dv = hit ? daysText(parseDays(r.days)) : daysText(b.days), hv = hit ? parseHours(r.hours).join(",") : b.hours.join(","), mv = hit ? (+r.minute || 0) : (b.minute || 0);
+    return '<div class="res-row" data-b="' + b.id + '" data-t="f"><input type="checkbox" class="ap" aria-label="' + esc(b.name) + ' 저장"' + (hit ? " checked" : "") + '>' +
+      '<div class="rn"><b>' + esc(b.name) + '</b> <span class="hint">' + RNAME[b.region] + '</span></div><div class="when num"></div>' +
+      '<div class="inp"><input class="field fdays" type="text" value="' + esc(dv) + '" style="width:72px" aria-label="요일"> 요일 <input class="field fhrs" type="text" value="' + esc(hv) + '" style="width:72px" aria-label="시"> 시 <input class="field fmin" type="number" min="0" max="59" value="' + mv + '" aria-label="분"> 분</div></div>';
+  }
+  var nFound = Object.keys(found).length;
   step('<div class="ask" style="font-size:14px">기준 시각 <b>' + askDate(shot.base) + '</b><p class="hint">' + esc(msg) + '</p></div>' +
-    '<div class="tbl"><table class="res"><thead><tr><th>적용</th><th>보스</th><th>화면 표시 (○시 ○분 후)</th><th></th><th>출현 시각</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<div class="foot"><button class="btn primary" type="button" data-s="apply">체크한 보스에 적용</button></div>');
-  var tbody = document.querySelector(".res tbody");
+    '<div class="res-list">' +
+    '<div class="res-sec">리젠 보스 <span class="hint">○시간 ○분 후 출현</span></div>' + respawnBosses().map(respRow).join("") +
+    '<div class="res-sec">고정 출현 보스 <span class="hint">요일 · 시각 (예: 월,목 / 21)</span></div>' + fixedBosses().map(fixRow).join("") +
+    '</div>' +
+    '<div class="foot"><span class="hint" id="apCount" style="margin-right:auto"></span><button class="btn primary big" type="button" data-s="apply">체크한 보스 저장</button></div>');
+  var tbody = document.querySelector(".res-list");
   function upd(){
-    tbody.querySelectorAll("tr").forEach(function(tr){
-      var lv = tr.querySelector(".lv").checked, h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
-      tr.querySelector(".when").textContent = lv ? "출현 중" : (h !== "" || m !== "") ? (function(t){ return dayLabel(t, Date.now()) + " " + hm(t); })(shot.base + (+h || 0) * H + (+m || 0) * M) : "—";
+    var cnt = 0, now = Date.now();
+    tbody.querySelectorAll(".res-row").forEach(function(tr){
+      var w = tr.querySelector(".when"), on = tr.querySelector(".ap").checked;
+      if (on) cnt++;
+      tr.style.opacity = on ? "1" : ".6";
+      if (tr.getAttribute("data-t") === "r") {
+        var b = find(tr.getAttribute("data-b")), lv = tr.querySelector(".lv").checked, h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
+        if (lv) { var nx = shot.base + (b.interval || 0) * M; w.textContent = b.interval ? "다음 " + dayLabel(nx, now) + " " + hm(nx) : "출현 중"; }
+        else w.textContent = (h !== "" || m !== "") ? (function(t){ return dayLabel(t, now) + " " + hm(t); })(shot.base + (+h || 0) * H + (+m || 0) * M) : "—";
+      } else {
+        var days = parseDays(tr.querySelector(".fdays").value), hours = parseHours(tr.querySelector(".fhrs").value), mi = +tr.querySelector(".fmin").value || 0;
+        if (!days.length || !hours.length) { w.textContent = "요일·시각 확인"; return; }
+        var fb = find(tr.getAttribute("data-b")), tmp = {type:"fixed", days:days, hours:hours, minute:mi, startAt: fb && fb.startAt}, c = compute(tmp, now);
+        w.textContent = c.at ? "다음 " + dayLabel(c.at, now) + " " + hm(c.at) : fixedLabel(tmp);
+      }
     });
+    var ac = document.getElementById("apCount"); ac.textContent = cnt + "마리 체크됨"; ac.style.color = "";
   }
   tbody.addEventListener("input", function(e){
-    var tr = e.target.closest("tr");
-    if (e.target.matches(".rh,.rm,.lv")) tr.querySelector(".ap").checked = true;
+    var tr = e.target.closest(".res-row"); if (!tr) return;
+    if (!e.target.classList.contains("ap")) tr.querySelector(".ap").checked = true;
     upd();
   });
+  tbody.addEventListener("change", upd);
   upd();
 }
 function applyShot(){
-  var n = 0;
-  document.querySelectorAll(".res tbody tr").forEach(function(tr){
+  var n = 0, bad = [];
+  document.querySelectorAll(".res-list .res-row").forEach(function(tr){
     if (!tr.querySelector(".ap").checked) return;
     var b = find(tr.getAttribute("data-b")); if (!b) return;
-    if (tr.querySelector(".lv").checked) { b.alive = true; b.anchor = shot.base; }
-    else {
-      var h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
-      if (h === "" && m === "") return;
-      b.alive = false; b.anchor = shot.base + (+h || 0) * H + (+m || 0) * M;
+    if (tr.getAttribute("data-t") === "r") {
+      if (tr.querySelector(".lv").checked) { b.alive = false; b.anchor = shot.base; }
+      else {
+        var h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
+        if (h === "" && m === "") { bad.push(b.name); return; }
+        b.alive = false; b.anchor = shot.base + (+h || 0) * H + (+m || 0) * M;
+      }
+    } else {
+      var days = parseDays(tr.querySelector(".fdays").value), hours = parseHours(tr.querySelector(".fhrs").value);
+      if (!days.length || !hours.length) { bad.push(b.name); return; }
+      b.days = days; b.hours = hours; b.minute = Math.max(0, Math.min(59, +tr.querySelector(".fmin").value || 0));
     }
     n++;
   });
-  if (!n) { step('<div class="ask">적용할 보스를 하나 이상 체크해 주세요.</div>'); return; }
+  var note = document.getElementById("apCount");
+  if (bad.length) { note.textContent = bad.join(", ") + "의 시간을 확인해 주세요."; note.style.color = "#ff6a5c"; return; }
+  if (!n) { note.textContent = "저장할 보스를 하나 이상 체크해 주세요."; note.style.color = "#ff6a5c"; return; }
   state.baseTime = shot.base; state.baseLabel = "스크린샷";
-  closeDlg(); saveMsg = ""; touch();
-  saveMsg = n + "마리 보스 시간을 갱신했어요. 저장하면 길드원 화면에 반영됩니다."; renderSaveBar();
-  toast(n + "마리 보스 시간을 갱신했습니다. 저장을 눌러 주세요.", "ok");
+  state.updatedAt = Date.now();
+  closeDlg(); dirty = true; render();
+  if (LIVE) save(); else { renderSaveBar(); toast(n + "마리 보스 시간을 반영했어요. (미리보기 모드라 저장되지 않아요)", "ok"); }
 }
 dlg.addEventListener("click", function(e){
   var s = e.target.closest("[data-s]"); if (!s) return;
@@ -979,6 +1088,7 @@ function onClick(e){
   }
   if (!admin) return;
   if (act === "shot") return shotDlg();
+  if (act === "pwchange") return pwDlg();
   if (act === "toggle" && b) {
     b.enabled = !b.enabled; touch();
     toast(b.name + (b.enabled ? " 알림을 켰습니다." : " 알림을 껐습니다. 안내 문구를 입력해 주세요."), "ok");
@@ -987,6 +1097,7 @@ function onClick(e){
   }
   if (act === "kill" && b) { b.alive = false; b.anchor = b.interval ? Math.round(Date.now() / M) * M + b.interval * M : null; touch(); return; }
   if (act === "time" && b) return timeDlg(b);
+  if (act === "ftime" && b) return fixedDlg(b);
   if (act === "bulkoff" || act === "bulkon") {
     var r = document.getElementById("bulkRegion").value, n = document.getElementById("bulkNote").value.trim();
     state.bosses.forEach(function(x){ if (x.region === r) { x.enabled = act === "bulkon"; if (act === "bulkoff" && n) x.note = n; } });
