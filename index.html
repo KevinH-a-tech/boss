@@ -646,7 +646,7 @@ function render(){
 
   if (admin) {
     h += '<section class="admin-panel glass"><h2>관리자 도구</h2>';
-    h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button>' + (LIVE ? '<button class="btn big" data-act="pwchange">비밀번호 변경</button>' : '') + '</div>';
+    h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button>' + '</div>';
     h += '<div class="line"><select class="field" id="bulkRegion" aria-label="지역">' + REGIONS.slice(1).map(function(r){ return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join("") + '</select>';
     h += '<input class="field" type="text" id="bulkNote" maxlength="60" placeholder="지역 안내 문구" style="flex:1;min-width:150px" aria-label="지역 안내 문구">';
     h += '<button class="btn" data-act="bulkoff">지역 전체 끄기</button><button class="btn" data-act="bulkon">지역 전체 켜기</button></div>';
@@ -783,36 +783,6 @@ function loginDlg(){
       if (c === "auth/too-many-requests") loginFail("시도가 너무 많아요. 잠시 후 다시 시도해 주세요.");
       else if (c === "auth/network-request-failed") loginFail("인터넷 연결을 확인해 주세요.");
       else loginFail("비밀번호가 틀렸습니다. 다시 입력해 주세요.");
-    });
-    return false;
-  });
-}
-
-function pwDlg(){
-  openPanel('<h3>비밀번호 변경</h3><p class="hint">새 비밀번호는 6자 이상이어야 해요.</p>' +
-    '<label class="l" for="pwOld">현재 비밀번호</label><input class="field" type="password" id="pwOld" autocomplete="current-password" style="width:100%">' +
-    '<label class="l" for="pwNew">새 비밀번호</label><input class="field" type="password" id="pwNew" autocomplete="new-password" style="width:100%">' +
-    '<label class="l" for="pwNew2">새 비밀번호 확인</label><input class="field" type="password" id="pwNew2" autocomplete="new-password" style="width:100%">' +
-    '<div class="alert" id="pwErr" role="alert" hidden></div>', "변경", function(){
-    var oldPw = document.getElementById("pwOld").value, n1 = document.getElementById("pwNew").value, n2 = document.getElementById("pwNew2").value;
-    var er = document.getElementById("pwErr");
-    var fail = function(msg){ er.textContent = msg; er.hidden = true; void er.offsetWidth; er.hidden = false; };
-    if (!oldPw) { fail("현재 비밀번호를 입력해 주세요."); return false; }
-    if (n1.length < 6) { fail("새 비밀번호는 6자 이상이어야 해요."); return false; }
-    if (n1 !== n2) { fail("새 비밀번호가 서로 달라요. 다시 확인해 주세요."); return false; }
-    var u = auth.currentUser;
-    if (!u) { fail("로그인 정보가 없어요. 다시 로그인해 주세요."); return false; }
-    var btn = dlg.querySelector('[data-d="ok"]'); btn.disabled = true; btn.textContent = "변경 중…";
-    var cred = firebase.auth.EmailAuthProvider.credential(u.email, oldPw);
-    u.reauthenticateWithCredential(cred).then(function(){ return u.updatePassword(n1); }).then(function(){
-      closeDlg(); toast("비밀번호를 변경했습니다. 다음 로그인부터 새 비밀번호를 쓰세요.", "ok");
-    }).catch(function(err){
-      btn.disabled = false; btn.textContent = "변경";
-      var c = err && err.code;
-      if (c === "auth/wrong-password" || c === "auth/invalid-credential" || c === "auth/invalid-login-credentials") fail("현재 비밀번호가 틀렸습니다.");
-      else if (c === "auth/weak-password") fail("새 비밀번호가 너무 쉬워요. 6자 이상으로 정해 주세요.");
-      else if (c === "auth/too-many-requests") fail("시도가 너무 많아요. 잠시 후 다시 시도해 주세요.");
-      else fail("변경하지 못했어요 (" + (c || "오류") + ").");
     });
     return false;
   });
@@ -1088,7 +1058,6 @@ function onClick(e){
   }
   if (!admin) return;
   if (act === "shot") return shotDlg();
-  if (act === "pwchange") return pwDlg();
   if (act === "toggle" && b) {
     b.enabled = !b.enabled; touch();
     toast(b.name + (b.enabled ? " 알림을 켰습니다." : " 알림을 껐습니다. 안내 문구를 입력해 주세요."), "ok");
