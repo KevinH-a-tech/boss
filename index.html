@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>의정부시 길드 보스 스케쥴표</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ===================== 설정 (여기만 바꾸면 됩니다) =====================
+   adminEmail : Firebase Authentication에 만든 관리자 계정 이메일
+   firebase   : Firebase 콘솔 > 프로젝트 설정 > 내 앱 에서 복사한 firebaseConfig 값
+   firebase 값이 비어 있으면 "미리보기 모드"로 동작합니다 (저장 안 됨, 비밀번호 3383).
+   ===================================================================== */
+window.BOSS_CONFIG = {
+  adminEmail: "admin@ujbguild.com",
+  firebase: {
+    apiKey: "AIzaSyCar8GbRTMHXIEFNSp1vBVwXv9izGftNXA",
+    authDomain: "zeus-boss-timer-311af.firebaseapp.com",
+    projectId: "zeus-boss-timer-311af",
+    storageBucket: "zeus-boss-timer-311af.firebasestorage.app",
+    messagingSenderId: "740939356411",
+    appId: "1:740939356411:web:38012fd8096334da6b785e"
+  }
+};
+</script>
+<style id="app-style">
+:root{
+  color-scheme:dark;
+  --bg:#1b1840; --orb1:#3f6df0; --orb2:#5ad1e6; --orb3:#7a3fd6;
+  --glass:rgba(255,255,255,.08); --glass2:rgba(255,255,255,.14); --stroke:rgba(255,255,255,.18); --hair:rgba(255,255,255,.1);
+  --text:#ffffff; --muted:rgba(255,255,255,.72); --faint:rgba(255,255,255,.65);
+  --respawn:#5ad1e6; --fixed:#c9a8ff; --live:#ff8a7a; --soon:#5ad1e6; --on-pill:#1b1840; --input:rgba(0,0,0,.22);
+  --chip:rgba(255,255,255,.1); --chip-soon:rgba(90,209,230,.32); --chip-live:rgba(255,112,112,.28);
+  --sans:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --num:"Manrope","Noto Sans KR",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#1b1840; } }
+:root[data-theme="dark"],:root[data-theme="light"]{ --bg:#1b1840; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--respawn);outline-offset:2px}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+
+.bgfx{position:absolute;top:0;bottom:0;left:50%;width:min(100%,720px);transform:translateX(-50%);z-index:0;pointer-events:none}
+.bgfx i{position:absolute;border-radius:50%}
+.bgfx i:nth-child(1){width:360px;height:360px;background:#3f6df0;filter:blur(90px);opacity:.55;left:-120px;top:-80px}
+.bgfx i:nth-child(2){width:320px;height:320px;background:#5ad1e6;filter:blur(100px);opacity:.45;right:-140px;top:380px}
+.bgfx i:nth-child(3){width:300px;height:300px;background:#7a3fd6;filter:blur(100px);opacity:.45;left:-100px;top:1080px}
+html{background:#1b1840}
+body{position:relative;overflow-x:hidden;background:#1b1840}
+
+.glass{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:26px 16px 120px;display:flex;flex-direction:column;gap:14px}
+
+header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:0 4px}
+.game{font-size:12.5px;color:var(--muted);font-weight:500}
+h1{margin:4px 0 0;font-size:clamp(24px,5.4vw,32px);line-height:1.22;font-weight:900;letter-spacing:-.03em}
+.pill{min-height:44px;padding:0 16px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
+.pill.admin{color:var(--respawn)}
+.modebox{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.mode{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.mode .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+.mode.admin{color:var(--respawn);border-color:color-mix(in srgb,var(--respawn) 55%,transparent)}
+.mode.admin .dot{background:var(--respawn);box-shadow:0 0 0 3px color-mix(in srgb,var(--respawn) 30%,transparent)}
+.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translate(-50%,-12px);z-index:50;min-width:240px;max-width:calc(100% - 32px);padding:14px 18px;border-radius:20px;background:var(--glass2);font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast .ti{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px;color:#fff}
+.toast.ok .ti{background:#1f9d6b}
+.toast.bad .ti{background:#d1453b}
+.alert{margin-top:10px;padding:10px 14px;border-radius:14px;font-size:14px;font-weight:700;background:color-mix(in srgb,var(--live) 18%,transparent);border:1px solid color-mix(in srgb,var(--live) 45%,transparent);color:var(--text)}
+.alert[hidden]{display:none}
+
+.hero{border-radius:32px;padding:22px 20px;display:flex;align-items:center;gap:18px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.22);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.ring{position:relative;width:132px;height:132px;flex:none}
+.ring svg{display:block}
+.ring .track{stroke:rgba(255,255,255,.15)}
+.ring .bar{stroke:#5ad1e6;transition:stroke-dashoffset .6s}
+
+
+.ring .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .big{font-size:25px;font-weight:800;line-height:1.1}
+.ring .cap{font-size:11px;color:var(--muted)}
+.hero .lbl{font-size:12px;color:var(--muted)}
+.hero .who{font-size:21px;font-weight:900;letter-spacing:-.02em;margin-top:2px;line-height:1.3}
+.hero .meta{font-size:12.5px;color:var(--muted)}
+.hero .at{margin-top:10px;font-size:22px;font-weight:800}
+.hero .atd{font-size:12px;color:var(--muted)}
+
+.duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{border-radius:24px;padding:14px 16px;min-width:0}
+.tile .k{font-size:11.5px;color:var(--muted)}
+.tile .v{font-size:22px;font-weight:800}
+.tile.live{background:rgba(255,112,112,.18);border-color:rgba(255,160,160,.35)}
+.tile.live .k{color:#ffd0d0}
+.tile.live .v{font-family:var(--sans);font-size:15px;font-weight:900;line-height:1.35}
+
+.admin-panel{border-radius:26px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.admin-panel h2{margin:0;font-size:15px;font-weight:900}
+.admin-panel .line{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{min-height:40px;padding:0 14px;border-radius:14px;background:var(--glass2);border:1px solid var(--stroke);font-size:13px;font-weight:700}
+.btn.primary{background:var(--text);color:var(--on-pill);border-color:transparent}
+.btn.big{min-height:48px;padding:0 18px;font-size:14px}
+.field{background:var(--input);border:1px solid var(--stroke);border-radius:12px;padding:8px 11px;min-width:0}
+
+.tabs{display:flex;gap:4px;padding:4px;border-radius:999px;overflow-x:auto}
+.tabs button{flex:1;min-height:40px;padding:0 12px;border:none;border-radius:999px;background:transparent;font-size:13px;font-weight:700;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:rgba(255,255,255,.9);color:#1b1840}
+
+.region-note{border-radius:28px;padding:14px 18px;font-size:14px;color:var(--muted);background:rgba(0,0,0,.22);border-color:rgba(255,255,255,.12)}
+.region-note b{color:var(--text)}
+
+.sec{border-radius:28px;padding:16px 16px 6px}
+.sec-off{background:rgba(0,0,0,.22);border-color:rgba(255,255,255,.12)}
+.sec-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.sec-h .ic{width:34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none}
+.sec-h.respawn .ic{background:rgba(90,209,230,.32);color:#ffffff}
+.sec-h.fixed .ic{background:rgba(255,255,255,.14);color:#ffffff}
+.sec-h.off .ic{background:var(--glass2);color:var(--muted)}
+.sec-h h2{margin:0;font-size:16px;font-weight:900}
+.sec-h p{margin:0;font-size:12px;color:var(--muted)}
+.empty{padding:14px 2px 16px;color:var(--muted);font-size:14px}
+
+.row{border-top-color:rgba(255,255,255,.1)}
+.row{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:6px 12px;align-items:center;padding:12px 0;border-top:1px solid var(--hair)}
+.chip{width:52px;height:52px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.chip{background:var(--chip)}
+.row.soon .chip{background:var(--chip-soon)}
+.row.live .chip{background:rgba(255,112,112,.28)}
+.row.live .hm{color:#ffffff}
+.row.off .chip{background:rgba(255,255,255,.06)}
+
+.chip .hm{font-size:15px;font-weight:800;line-height:1.15}
+.chip .dy{font-size:10.5px;color:var(--muted)}
+.nm{font-size:15px;font-weight:700;line-height:1.35}
+.nm .lv{margin-right:4px}
+.sub{font-size:12px;color:rgba(255,255,255,.65)}
+.rt{text-align:right}
+.lf{font-size:13px;font-weight:700;white-space:nowrap;color:rgba(255,255,255,.85)}
+.tg{font-size:11.5px;color:var(--faint);white-space:nowrap}
+.row.soon .lf{color:var(--soon)}
+.row.live .lf{color:var(--live)}
+.row.est .dy::after{content:" 예상"}
+.row.off .nm,.row.off .lf,.row.off .hm{color:var(--faint)}
+.note{grid-column:2/4;justify-self:start;font-size:14px;font-weight:700;padding:8px 14px;border-radius:16px;background:rgba(255,255,255,.1)}
+.info{grid-column:2/4;font-size:12px;color:var(--muted)}
+.acts{grid-column:1/4;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:4px 0 2px}
+.acts .btn{min-height:36px;font-size:12.5px;border-radius:12px}
+.acts .field{flex:1;min-width:160px;font-size:13px}
+.sw{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px 0 6px;border-radius:999px;border:1px solid var(--stroke);background:var(--glass2);font-size:12.5px;font-weight:700}
+.sw .knob{width:34px;height:20px;border-radius:999px;background:var(--hair);position:relative;transition:background .2s}
+.sw .knob::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text);transition:transform .2s}
+.sw[aria-checked="true"] .knob{background:var(--respawn)}
+.sw[aria-checked="true"] .knob::after{transform:translateX(14px);background:#fff}
+
+footer{padding:6px 6px 0;font-size:12.5px;color:var(--muted);line-height:1.75}
+footer p{margin:0 0 4px}
+
+.savebar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:5;width:min(688px,calc(100% - 24px));border-radius:22px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--glass2)}
+.savebar .msg{flex:1;min-width:170px;font-size:13.5px}
+.savebar[hidden]{display:none}
+
+dialog{background:#1b1840;color:var(--text);border:1px solid var(--stroke);border-radius:26px;padding:20px;width:min(520px,94vw);max-height:88vh;overflow:auto}
+dialog::backdrop{background:rgba(8,6,24,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+dialog h3{margin:0 0 6px;font-size:19px;font-weight:900}
+dialog label.l{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 4px}
+dialog .r2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+dialog .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;flex-wrap:wrap}
+dialog .err{color:var(--live);font-size:13px;min-height:1.2em;margin-top:6px}
+dialog .hint{font-size:12.5px;color:var(--muted);margin:4px 0 0}
+dialog input[type=number]{width:70px}
+.seg{display:flex;border-radius:14px;overflow:hidden;border:1px solid var(--stroke)}
+.seg button{flex:1;background:none;border:none;padding:9px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--glass2);color:var(--text);font-weight:700}
+.thumbs{display:flex;gap:8px;overflow-x:auto;margin-top:12px}
+.thumbs{flex-wrap:wrap}
+.thumbs img{height:120px;border-radius:12px;border:1px solid var(--stroke);cursor:zoom-in}
+.thumbs img.big{height:auto;width:100%;cursor:zoom-out}
+.ask{margin-top:14px;padding:14px;border-radius:18px;background:var(--glass2);font-size:15px;line-height:1.55}
+.ask b{font-weight:900}
+.picker{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 18px;border-radius:14px;background:var(--text);color:var(--on-pill);font-size:14px;font-weight:700;cursor:pointer;margin-top:12px}
+.picker input{position:absolute;width:1px;height:1px;opacity:0}
+.res{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.res th{font-weight:500;color:var(--muted);text-align:left;padding:6px 4px;font-size:12px}
+.res td{padding:7px 4px;border-top:1px solid var(--hair);vertical-align:middle}
+.res input[type=number]{width:50px;padding:5px 6px}
+.res .when{white-space:nowrap;font-weight:700}
+.tbl{overflow-x:auto}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--hair);border-top-color:var(--text);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+
+
+/* ---- board palette (C. 전광판 colors) ---- */
+:root{color-scheme:dark;--respawn:#ffb23e;--soon:#ffb23e;--live:#ff6b4a;--text:#f3ead8;--muted:#a39a88;--faint:#8d8574;--hair:#221f19;--stroke:#2e2a22}
+html,body{background:#1a1712}
+body{color:#f3ead8}
+.bgfx{display:none}
+:focus-visible{outline-color:#ffb23e}
+.glass{background:#0d0c0a;border:2px solid #2e2a22;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+.hero{background:#0d0c0a;border-color:#2e2a22;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none}
+.game{color:#a39a88}
+h1{color:#f3ead8}
+
+.pill{background:transparent;border:1px solid #5a4a2a;color:#ffb23e}
+.pill.admin{color:#ffb23e}
+.mode{background:#0d0c0a;border-color:#2e2a22;color:#a39a88}
+.mode .dot{background:#6b665c}
+.mode.admin{color:#ffb23e;border-color:#5a4a2a}
+.mode.admin .dot{background:#ffb23e;box-shadow:0 0 0 3px rgba(255,178,62,.25)}
+
+.ring .track{stroke:#24201a}
+.ring .bar{stroke:#ffb23e}
+.ring .big,.hero .at{color:#ffb23e}
+.ring .cap,.hero .lbl,.hero .meta,.hero .atd{color:#a39a88}
+.hero .who{color:#f3ead8}
+
+.tile .k{color:#a39a88}
+.tile .v{color:#ffb23e}
+.tile.live{background:#0d0c0a;border-color:#5a2a1e}
+.tile.live .k{color:#ff6b4a}
+.tile.live .v{color:#f3ead8}
+
+.admin-panel h2{color:#ffb23e}
+.btn{background:transparent;border:1px solid #5a4a2a;color:#ffb23e}
+.btn.primary{background:#ffb23e;border-color:#ffb23e;color:#1a1206}
+.field{background:#1d1a15;border-color:#2e2a22;color:#f3ead8}
+.field::placeholder{color:#6b665c}
+
+.tabs button{color:#a39a88}
+.tabs button[aria-selected="true"]{background:#ffb23e;color:#1a1206}
+
+.sec-h h2{color:#f3ead8}
+.sec-h p{color:#a39a88}
+.sec-h.respawn .ic{background:#24201a;color:#ffb23e}
+.sec-h.fixed .ic{background:#24201a;color:#d8cdb6}
+.sec-h.off .ic{background:#24201a;color:#8d8574}
+.sec-off{background:#0d0c0a;border-color:#2e2a22}
+.empty{color:#8d8574}
+
+.row{border-top-color:#221f19}
+.row .chip{background:#1d1a15;box-shadow:none}
+.row .chip .hm{color:#ffb23e}
+.row .chip .dy{color:#8d8574}
+.row .nm{color:#f3ead8}
+.row .sub,.row .tg{color:#8d8574}
+.row .lf{color:#d8cdb6}
+.row.soon .chip{background:#ffb23e}
+.row.soon .chip .hm,.row.soon .chip .dy{color:#1a1206}
+.row.soon .lf{color:#ffb23e}
+.row.live .chip{background:#ff6b4a}
+.row.live .chip .hm,.row.live .chip .dy{color:#1a0d08}
+.row.live .lf{color:#ff6b4a}
+.row.off{opacity:.75}
+.row.off .chip{background:#1d1a15}
+.row.off .chip .hm{color:#6b665c}
+.row.off .nm,.row.off .lf{color:#8d8574}
+.note{background:#2e2a22;color:#d8cdb6}
+.info{color:#8d8574}
+.region-note{background:#0d0c0a;border-color:#2e2a22;color:#a39a88}
+.region-note b{color:#f3ead8}
+
+.sw{background:transparent;border-color:#5a4a2a;color:#ffb23e}
+.sw .knob{background:#2e2a22}
+.sw .knob::after{background:#a39a88}
+.sw[aria-checked="true"] .knob{background:#ffb23e}
+.sw[aria-checked="true"] .knob::after{background:#1a1206}
+
+footer{color:#8d8574}
+.savebar{background:#24201a;border-color:#5a4a2a}
+.toast{background:#24201a;border-color:#2e2a22;color:#f3ead8}
+dialog{background:#1a1712;border-color:#2e2a22;color:#f3ead8}
+dialog .hint,dialog label.l{color:#a39a88}
+.ask{background:#24201a}
+.picker{background:#ffb23e;color:#1a1206}
+.seg{border-color:#2e2a22}
+.seg button{color:#a39a88}
+.seg button[aria-pressed="true"]{background:#24201a;color:#ffb23e}
+.res th{color:#a39a88}
+.res td{border-top-color:#221f19}
+.thumbs img{border-color:#2e2a22}
+
+/* ---- refined board: softer gold, layered warm darks, less amber ---- */
+:root{--gold:#e3b25e;--gold-hi:#f0c77a;--coral:#f08a6c;--cream:#ece3d2;--cream2:#e6d9bf;--muted:#9f9584;--faint:#857d6f;--line:rgba(255,235,200,.07)}
+html,body{background:#14120f}
+body{color:var(--cream);background-image:
+  radial-gradient(700px 380px at 50% -120px,rgba(227,178,94,.10),transparent 70%),
+  linear-gradient(180deg,#1c1914 0%,#16140f 45%,#121009 100%)}
+.glass{background:linear-gradient(180deg,#1b1813,#15130f);border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,240,210,.05),0 8px 24px rgba(0,0,0,.28)}
+.hero{background:linear-gradient(160deg,#221d15 0%,#16130f 70%);border:1px solid rgba(227,178,94,.18);box-shadow:inset 0 1px 0 rgba(255,240,210,.06),0 10px 30px rgba(0,0,0,.32)}
+h1,.hero .who,.sec-h h2,.row .nm{color:var(--cream)}
+.game,.hero .lbl,.hero .meta,.hero .atd,.ring .cap,.tile .k,.sec-h p{color:var(--muted)}
+
+.ring .track{stroke:#2a251d}
+.ring .bar{stroke:url(#ringGold)}
+.ring .big,.hero .at{color:var(--gold-hi)}
+.tile .v{color:var(--cream2)}
+.tile.live{background:linear-gradient(180deg,#24170f,#17120e);border-color:rgba(240,138,108,.28)}
+.tile.live .k{color:var(--coral)}
+.tile.live .v{color:var(--cream)}
+
+.pill,.btn,.sw{border-color:rgba(227,178,94,.32);color:var(--gold-hi);background:rgba(227,178,94,.04)}
+.btn.primary,.picker{background:linear-gradient(180deg,#ecc276,#d4a252);border-color:transparent;color:#1d1408;box-shadow:0 4px 14px rgba(212,162,82,.22)}
+.mode{background:rgba(255,235,200,.04);border-color:var(--line);color:var(--muted)}
+.mode.admin{color:var(--gold-hi);border-color:rgba(227,178,94,.32)}
+.mode.admin .dot{background:var(--gold)}
+.admin-panel{background:linear-gradient(180deg,#201b13,#16130f);border-color:rgba(227,178,94,.2)}
+.admin-panel h2{color:var(--gold-hi)}
+.field{background:#100e0b;border-color:var(--line)}
+
+.tabs button{color:var(--muted)}
+.tabs button[aria-selected="true"]{background:rgba(227,178,94,.16);color:var(--gold-hi);box-shadow:inset 0 0 0 1px rgba(227,178,94,.35)}
+
+.sec-h.respawn .ic{background:rgba(227,178,94,.12);color:var(--gold-hi)}
+.sec-h.fixed .ic{background:rgba(255,235,200,.07);color:var(--cream2)}
+.sec-h.off .ic{background:rgba(255,235,200,.04);color:var(--faint)}
+.sec-off{background:#110f0c;border-color:rgba(255,235,200,.05);box-shadow:none}
+
+.row{border-top-color:var(--line)}
+.row .chip{background:rgba(255,235,200,.05);box-shadow:inset 0 0 0 1px rgba(255,235,200,.06)}
+.row .chip .hm{color:var(--cream2)}
+.row .chip .dy{color:var(--faint)}
+.row .sub,.row .tg{color:var(--faint)}
+.row .lf{color:#cfc4b0}
+.row.soon .chip{background:rgba(227,178,94,.14);box-shadow:inset 0 0 0 1px rgba(227,178,94,.45)}
+.row.soon .chip .hm{color:var(--gold-hi)}
+.row.soon .chip .dy{color:rgba(240,199,122,.75)}
+.row.soon .lf{color:var(--gold-hi)}
+.row.live .chip{background:rgba(240,138,108,.14);box-shadow:inset 0 0 0 1px rgba(240,138,108,.45)}
+.row.live .chip .hm{color:var(--coral)}
+.row.live .chip .dy{color:rgba(240,138,108,.8)}
+.row.live .lf{color:var(--coral)}
+.row.off{opacity:1}
+.row.off .chip{background:rgba(255,235,200,.03);box-shadow:none}
+.row.off .chip .hm,.row.off .nm,.row.off .lf{color:#6f685c}
+.note{background:rgba(255,235,200,.06);color:#b9ad98;border:1px solid rgba(255,235,200,.06)}
+.region-note{background:#110f0c;border-color:var(--line)}
+
+.sw[aria-checked="true"] .knob{background:var(--gold)}
+.savebar{background:linear-gradient(180deg,#241f17,#1a1712);border-color:rgba(227,178,94,.28);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast{background:#221d16;border-color:rgba(227,178,94,.22)}
+dialog{background:linear-gradient(180deg,#1f1b15,#15130f);border-color:rgba(227,178,94,.2)}
+.ask{background:rgba(255,235,200,.05)}
+.seg button[aria-pressed="true"]{background:rgba(227,178,94,.14);color:var(--gold-hi)}
+footer{color:var(--faint)}
+:focus-visible{outline-color:var(--gold-hi)}
+
+@media (max-width:420px){
+  .hero{gap:14px;padding:18px 16px}
+  .ring{width:112px;height:112px}
+  .ring svg{width:112px;height:112px}
+  .ring .big{font-size:18px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .row.live .hm{animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.45}}
+}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
+<div id="app"></div>
+<script type="application/json" id="boss-state">{"baseTime":1791466260000,"baseLabel":"스크린샷","updatedAt":1791468812516,"bosses":[{"id":"arachne","name":"아라크네","lv":50,"region":"thessalia","loc":"테살리아","type":"fixed","days":[3],"hours":[21],"enabled":true,"note":""},{"id":"chrysophagos","name":"크리소파고스","lv":35,"region":"thessalia","loc":"테살리아 평원","type":"respawn","interval":480,"anchor":1791474000000,"enabled":true,"note":""},{"id":"amorphos","name":"아모르포스","lv":35,"region":"thessalia","loc":"침식된 경작지","type":"respawn","interval":480,"anchor":1791474180000,"enabled":true,"note":""},{"id":"thrason","name":"트라손","lv":40,"region":"thessalia","loc":"고대 신전 유적지","type":"respawn","interval":480,"anchor":1791474300000,"enabled":true,"note":""},{"id":"iokanthos","name":"이오칸토스","lv":45,"region":"thessalia","loc":"아르보리아스 폐허","type":"respawn","interval":720,"anchor":1791470820000,"enabled":true,"note":""},{"id":"kini","name":"키니 러우리","lv":45,"region":"thessalia","loc":"금지된 숲","type":"respawn","interval":720,"anchor":1791471120000,"enabled":true,"note":""},{"id":"argos","name":"아르고스","lv":65,"region":"zahab","loc":"자하브","type":"fixed","days":[1],"hours":[21],"enabled":false,"note":"처치 불가"},{"id":"alastor","name":"알라스토르","lv":55,"region":"zahab","loc":"무법자의 길목","type":"respawn","interval":480,"anchor":1791485880000,"enabled":true,"note":""},{"id":"bedix","name":"베딕스","lv":60,"region":"zahab","loc":"공헌의 제단","type":"respawn","interval":480,"anchor":1791472440000,"enabled":true,"note":""},{"id":"gotsis","name":"고트시스","lv":60,"region":"zahab","loc":"황금 리라 부락","type":"respawn","interval":480,"anchor":1791472680000,"enabled":true,"note":""},{"id":"tripok","name":"트리포크","lv":65,"region":"zahab","loc":"가시 덩굴 지대","type":"respawn","interval":720,"anchor":1791482280000,"enabled":false,"note":"처치 불가"},{"id":"giant","name":"거인의 세번째 손","lv":70,"region":"zahab","loc":"유적지 폐허","type":"respawn","interval":720,"anchor":1791466260000,"alive":true,"enabled":false,"note":"처치 불가"},{"id":"medeia","name":"메데이아","lv":45,"region":"tartaros","loc":"[인터] 타르타로스 2계","type":"fixed","days":[2],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"chimera","name":"키메라","lv":60,"region":"tartaros","loc":"[인터] 타르타로스 4계","type":"fixed","days":[6],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"cerberus","name":"케르베로스","lv":75,"region":"tartaros","loc":"[인터] 타르타로스 5계","type":"fixed","days":[5],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"s_amorphos","name":"봉인된 아모르포스","lv":40,"region":"tartaros","loc":"[인터] 타르타로스 1계 · 유폐의 둥지","type":"respawn","interval":480,"anchor":1791475380000,"enabled":false,"note":"통제로 인해 불가"},{"id":"bdeles","name":"봉인된 브델레스","lv":45,"region":"tartaros","loc":"타르타로스 2계 · 배신의 심연굴","type":"respawn","interval":null,"anchor":1791514560000,"enabled":false,"note":"통제로 인해 불가"},{"id":"abyss","name":"심연의 틈","lv":null,"region":"invasion","loc":"테살리아 / 자하브","type":"fixed","days":[0,1,2,3,4,5,6],"hours":[0,12,18],"enabled":true,"note":"","info":"하루 1회 참여 · 참여 보상 매일 5시 초기화"},{"id":"scoto_v","name":"선봉의 스코톨라스마","lv":40,"region":"invasion","loc":"침공","type":"fixed","days":[1,4],"hours":[21],"startAt":1791903600000,"enabled":false,"note":"10/14 업데이트 예정"},{"id":"scoto_f","name":"함락의 스코톨라스마","lv":40,"region":"invasion","loc":"침공","type":"fixed","days":[1,4],"hours":[21],"startAt":1791903600000,"enabled":false,"note":"10/14 업데이트 예정"}]}</script>
+<script id="app-script">
+(function(){
+"use strict";
+var PW = "3383";
+var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
+var LIVE_FIXED = 30 * M, LIVE_RESPAWN = 15 * M;
+var REGIONS = [["all","전체"],["thessalia","테살리아"],["zahab","자하브"],["tartaros","타르타로스"],["invasion","침공"]];
+var RNAME = {thessalia:"테살리아",zahab:"자하브",tartaros:"타르타로스",invasion:"침공"};
+var WD = ["일","월","화","수","목","금","토"];
+var IC_CYCLE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg>';
+var IC_CAL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+var IC_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
+
+var state = JSON.parse(document.getElementById("boss-state").textContent);
+var saved = JSON.stringify(state);
+var dirty = false, tab = "all", admin = false;
+var sampleNs = null, canWrite = true, saveMsg = "";
+var CFG = window.BOSS_CONFIG || {}, LIVE = false, auth = null, docRef = null, conn = "preview", loginPending = false;
+var lastSig = "";
+
+if (CFG.firebase && CFG.firebase.apiKey && window.firebase) {
+  try {
+    firebase.initializeApp(CFG.firebase);
+    auth = firebase.auth();
+    docRef = firebase.firestore().collection("schedule").doc("main");
+    LIVE = true; conn = "connecting";
+  } catch (e) { LIVE = false; conn = "preview"; }
+}
+if (!LIVE) { try { admin = sessionStorage.getItem("boss-admin") === "1"; } catch (e) {} }
+try { var tb = sessionStorage.getItem("boss-tab"); if (tb) tab = tb; } catch (e) {}
+
+
+/* ---------- time (KST) ---------- */
+function k(ms){ return new Date(ms + KST); }
+function kMid(ms){ var d = k(ms); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - KST; }
+function pad(n){ return (n < 10 ? "0" : "") + n; }
+function hm(ms){ var d = k(ms); return pad(d.getUTCHours()) + ":" + pad(d.getUTCMinutes()); }
+function dayLabel(ms, now){
+  var diff = Math.round((kMid(ms) - kMid(now)) / D), d = k(ms);
+  if (diff === 0) return "오늘";
+  if (diff === 1) return "내일";
+  if (diff === 2) return "모레";
+  return (d.getUTCMonth() + 1) + "/" + d.getUTCDate() + "(" + WD[d.getUTCDay()] + ")";
+}
+function fullDate(ms){ var d = k(ms); return (d.getUTCMonth() + 1) + "월 " + d.getUTCDate() + "일 (" + WD[d.getUTCDay()] + ") " + hm(ms); }
+function askDate(ms){ var d = k(ms); return d.getUTCFullYear() + "년 " + pad(d.getUTCMonth() + 1) + "월 " + pad(d.getUTCDate()) + "일 " + pad(d.getUTCHours()) + "시 " + pad(d.getUTCMinutes()) + "분"; }
+function left(ms){
+  if (ms < 0) ms = 0;
+  var dd = Math.floor(ms / D), h = Math.floor(ms % D / H), m = Math.floor(ms % H / M), s = Math.floor(ms % M / 1000);
+  if (dd > 0) return dd + "일 " + h + "시간";
+  if (h > 0) return h + "시간 " + m + "분";
+  return m + "분 " + pad(s) + "초";
+}
+function clockLeft(ms){
+  if (ms < 0) ms = 0;
+  if (ms >= D) { return Math.floor(ms / D) + "일 " + Math.floor(ms % D / H) + "시간"; }
+  var h = Math.floor(ms / H), m = Math.floor(ms % H / M), s = Math.floor(ms % M / 1000);
+  return h + ":" + pad(m) + ":" + pad(s);
+}
+function since(ms){ var m = Math.floor(ms / M); return m < 60 ? m + "분 경과" : Math.floor(m / 60) + "시간 " + (m % 60) + "분 경과"; }
+function ivLabel(min){
+  if (!min) return "리젠 주기 미정";
+  var h = Math.floor(min / 60), m = min % 60;
+  return "리젠 " + (h ? h + "시간" : "") + (m ? " " + m + "분" : "");
+}
+function fixedLabel(b){
+  if (b.days.length === 7) return "매일 " + b.hours.join("·") + "시";
+  return b.days.map(function(d){ return WD[d]; }).join("·") + " " + b.hours[0] + "시";
+}
+
+function occ(b, t){
+  var out = [], base = kMid(t);
+  for (var i = -2; i <= 8; i++) {
+    var day = base + i * D, wd = k(day).getUTCDay();
+    if (b.days.indexOf(wd) < 0) continue;
+    for (var j = 0; j < b.hours.length; j++) out.push(day + b.hours[j] * H);
+  }
+  return out.sort(function(a, c){ return a - c; });
+}
+function compute(b, now){
+  if (b.type === "fixed") {
+    var start = b.startAt || 0, list = occ(b, Math.max(now, start)), last = null, next = null;
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] < start) continue;
+      if (list[i] <= now) last = list[i];
+      else if (next === null) next = list[i];
+    }
+    if (last !== null && now - last < LIVE_FIXED) return {st:"live", since:last};
+    return {st:"up", at:next, certain:true, pending: now < start};
+  }
+  if (b.alive) {
+    if (now - b.anchor > D) return {st:"unknown", why:"처치 시각 미기록"};
+    return {st:"live", since:b.anchor, aliveSeen:true};
+  }
+  if (!b.anchor) return {st:"unknown", why:"시간 미등록"};
+  if (now < b.anchor) return {st:"up", at:b.anchor, certain:true};
+  var iv = b.interval ? b.interval * M : 0;
+  if (!iv) {
+    if (now - b.anchor < LIVE_RESPAWN) return {st:"live", since:b.anchor};
+    return {st:"unknown", why:"리젠 주기 미정"};
+  }
+  var n = Math.floor((now - b.anchor) / iv), lastR = b.anchor + n * iv;
+  if (now - lastR < LIVE_RESPAWN) return {st:"live", since:lastR};
+  return {st:"up", at:lastR + iv, certain:false};
+}
+function texts(b, c, now){
+  if (c.st === "live") return {hm:"출현", dy: c.aliveSeen ? "스샷 확인" : hm(c.since), lf:"출현 중", tg: c.aliveSeen ? "처치 시각 미기록" : since(now - c.since)};
+  if (c.st === "up") return {hm:hm(c.at), dy:dayLabel(c.at, now), lf:left(c.at - now) + " 후", tg: b.type === "fixed" ? fixedLabel(b) + (c.pending ? " · 10/14부터" : "") : ivLabel(b.interval)};
+  return {hm:"—", dy:"미정", lf:c.why, tg: b.type === "fixed" ? fixedLabel(b) : ivLabel(b.interval)};
+}
+var SOON = 60 * M;
+function isSoon(b, c, now){ return b.enabled && c.st === "up" && c.at - now <= SOON; }
+
+/* ---------- render ---------- */
+var app = document.getElementById("app");
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(ch){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]; }); }
+
+function rowHtml(b, c, now){
+  var t = texts(b, c, now), cls = ["row", b.type === "fixed" ? "fixed" : "respawn"];
+  if (!b.enabled) cls.push("off");
+  if (c.st === "live") cls.push("live");
+  if (c.st === "up" && !c.certain) cls.push("est");
+  if (isSoon(b, c, now)) cls.push("soon");
+  var where = esc(RNAME[b.region]) + (b.loc && b.loc !== RNAME[b.region] ? " · " + esc(b.loc) : "");
+  var h = '<div class="' + cls.join(" ") + '" data-row="' + b.id + '">';
+  h += '<div class="chip"><div class="hm num" data-f="hm">' + t.hm + '</div><div class="dy" data-f="dy">' + t.dy + '</div></div>';
+  h += '<div style="min-width:0"><div class="nm">' + (b.lv ? '<span class="lv">Lv.' + b.lv + '</span>' : "") + esc(b.name) + '</div><div class="sub">' + where + '</div></div>';
+  h += '<div class="rt"><div class="lf num" data-f="lf">' + esc(t.lf) + '</div><div class="tg" data-f="tg">' + esc(t.tg) + '</div></div>';
+  if (!b.enabled && b.note && !admin) h += '<div class="note">' + esc(b.note) + '</div>';
+  else if (b.info && b.enabled) h += '<div class="info">' + esc(b.info) + '</div>';
+  if (admin) {
+    h += '<div class="acts">';
+    h += '<button class="sw" role="switch" aria-checked="' + b.enabled + '" data-act="toggle" data-id="' + b.id + '"><span class="knob"></span>알림 ' + (b.enabled ? "켜짐" : "꺼짐") + '</button>';
+    if (!b.enabled) h += '<input class="field" type="text" maxlength="60" data-note="' + b.id + '" value="' + esc(b.note || "") + '" placeholder="안내 문구 (예: 통제로 인해 불가)" aria-label="' + esc(b.name) + ' 안내 문구">';
+    if (b.type === "respawn") h += '<button class="btn" data-act="kill" data-id="' + b.id + '">처치 완료</button><button class="btn" data-act="time" data-id="' + b.id + '">시간 수정</button>';
+    h += '</div>';
+  }
+  return h + '</div>';
+}
+
+function sortKey(x){ return x.c.st === "live" ? -1 : x.c.st === "up" ? x.c.at : Infinity; }
+function snapshot(now){
+  return state.bosses.map(function(b){ return {b:b, c:compute(b, now)}; });
+}
+function signature(items, now){
+  return items.map(function(x){ return x.b.id + x.c.st + (x.c.at || "") + isSoon(x.b, x.c, now); }).join("|") + tab + admin;
+}
+
+function heroData(items, now){
+  var on = items.filter(function(x){ return x.b.enabled && x.c.st === "up"; }).sort(function(a, c){ return a.c.at - c.c.at; });
+  if (!on.length) return null;
+  var nx = on[0], same = on.filter(function(x){ return x.c.at === nx.c.at; });
+  var win = nx.b.type === "respawn" && nx.b.interval ? nx.b.interval * M : 12 * H;
+  var p = Math.max(0, Math.min(1, 1 - (nx.c.at - now) / win));
+  return {x:nx, names: same.map(function(s){ return s.b.name; }).join(", "), p:p};
+}
+var RC = 2 * Math.PI * 58;
+
+function render(){
+  var now = Date.now(), items = snapshot(now);
+  lastSig = signature(items, now);
+  var vis = items.filter(function(x){ return tab === "all" || x.b.region === tab; });
+  var resp = vis.filter(function(x){ return x.b.enabled && x.b.type === "respawn"; }).sort(function(a, c){ return sortKey(a) - sortKey(c); });
+  var fixd = vis.filter(function(x){ return x.b.enabled && x.b.type === "fixed"; }).sort(function(a, c){ return sortKey(a) - sortKey(c); });
+  var off = vis.filter(function(x){ return !x.b.enabled; }).sort(function(a, c){ return sortKey(a) - sortKey(c); });
+  var nk = k(now);
+
+  var h = '<div class="wrap">';
+  h += '<header class="top"><div><div class="game">제우스: 오만의신 · 포세이돈2</div><h1>의정부시 길드<br>보스 스케쥴표</h1></div>';
+  h += '<div class="modebox">' + (admin
+    ? '<span class="mode glass admin" role="status"><span class="dot"></span>관리자 모드</span><button class="pill glass" data-act="logout">로그아웃</button>'
+    : '<span class="mode glass" role="status"><span class="dot"></span>게스트 · 읽기 전용</span><button class="pill glass admin" data-act="login">관리자 로그인</button>') + '</div>';
+  h += '</header>';
+
+  var hd = heroData(items, now);
+  if (hd) {
+    var nb = hd.x.b, soon = hd.x.c.at - now <= SOON;
+    h += '<section class="hero glass ' + (nb.type === "fixed" ? "fixed" : "respawn") + (soon ? " soon" : "") + '" id="hero">';
+    h += '<div class="ring"><svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true"><defs><linearGradient id="ringGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3d08a"/><stop offset="1" stop-color="#c48d3a"/></linearGradient></defs><circle class="track" cx="66" cy="66" r="58" fill="none" stroke-width="10"/><circle class="bar" id="ringBar" cx="66" cy="66" r="58" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + RC.toFixed(1) + '" stroke-dashoffset="' + (RC * (1 - hd.p)).toFixed(1) + '" transform="rotate(-90 66 66)"/></svg>';
+    h += '<div class="mid"><div class="big num" id="heroLeft">' + clockLeft(hd.x.c.at - now) + '</div><div class="cap">남음</div></div></div>';
+    h += '<div style="min-width:0"><div class="lbl">다음 보스</div><div class="who">' + esc(hd.names) + '</div>';
+    h += '<div class="meta">' + (nb.lv ? "Lv." + nb.lv + " · " : "") + esc(RNAME[nb.region]) + " · " + (nb.type === "fixed" ? "고정 출현" : "리젠" + (hd.x.c.certain ? "" : " · 예상 시간")) + '</div>';
+    h += '<div class="at num">' + hm(hd.x.c.at) + '</div><div class="atd">' + dayLabel(hd.x.c.at, now) + ' 출현</div></div></section>';
+  }
+
+  var lives = items.filter(function(x){ return x.b.enabled && x.c.st === "live"; });
+  h += '<div class="duo"><div class="tile glass"><div class="k">현재 시각 · 한국</div><div class="v num" id="clk">' + hm(now) + ':' + pad(nk.getUTCSeconds()) + '</div><div class="k">' + (nk.getUTCMonth() + 1) + '월 ' + nk.getUTCDate() + '일 (' + WD[nk.getUTCDay()] + ')</div></div>';
+  if (lives.length) h += '<div class="tile glass live"><div class="k">지금 출현 중</div><div class="v">' + lives.map(function(x){ return esc(x.b.name); }).join("<br>") + '</div></div>';
+  else h += '<div class="tile glass"><div class="k">시간 기준</div><div class="v" style="font-size:15px;font-weight:700;font-family:var(--sans)">' + fullDate(state.baseTime) + '</div><div class="k">' + esc(state.baseLabel || "") + '</div></div>';
+  h += '</div>';
+
+  if (admin) {
+    h += '<section class="admin-panel glass"><h2>관리자 도구</h2>';
+    h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button></div>';
+    h += '<div class="line"><select class="field" id="bulkRegion" aria-label="지역">' + REGIONS.slice(1).map(function(r){ return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join("") + '</select>';
+    h += '<input class="field" type="text" id="bulkNote" maxlength="60" placeholder="지역 안내 문구" style="flex:1;min-width:150px" aria-label="지역 안내 문구">';
+    h += '<button class="btn" data-act="bulkoff">지역 전체 끄기</button><button class="btn" data-act="bulkon">지역 전체 켜기</button></div>';
+    h += '<p style="margin:0;font-size:12px;color:var(--muted)">끄거나 문구를 바꾼 뒤 아래 <b>변경사항 저장</b>을 눌러야 길드원 화면에 반영됩니다.</p></section>';
+  }
+
+  h += '<nav class="tabs glass" role="tablist">' + REGIONS.map(function(r){ return '<button role="tab" data-tab="' + r[0] + '" aria-selected="' + (tab === r[0]) + '">' + r[1] + '</button>'; }).join("") + '</nav>';
+
+  if (tab !== "all") {
+    var regAll = items.filter(function(x){ return x.b.region === tab; });
+    if (regAll.length && regAll.every(function(x){ return !x.b.enabled; })) {
+      var notes = regAll.map(function(x){ return x.b.note; }).filter(Boolean), uniq = notes.filter(function(n, i){ return notes.indexOf(n) === i; });
+      h += '<div class="region-note glass"><b>' + RNAME[tab] + ' 보스는 현재 진행하지 않습니다.</b>' + (uniq.length === 1 ? " " + esc(uniq[0]) : "") + '</div>';
+    }
+  }
+
+  function section(kind, icon, title, desc, list, emptyMsg){
+    if (!list.length && kind === "off") return "";
+    var s = '<section class="sec glass sec-' + kind + '"><div class="sec-h ' + kind + '"><div class="ic">' + icon + '</div><div><h2>' + title + '</h2><p>' + desc + '</p></div></div>';
+    s += list.length ? list.map(function(x){ return rowHtml(x.b, x.c, now); }).join("") : '<div class="empty">' + emptyMsg + '</div>';
+    return s + '</section>';
+  }
+  h += section("respawn", IC_CYCLE, "리젠 보스", "정해진 주기로 다시 출현해요. 스크린샷 기준으로 계산합니다.", resp, "알림이 켜진 리젠 보스가 없습니다.");
+  h += section("fixed", IC_CAL, "고정 출현 보스", "요일과 시간이 정해져 있어요.", fixd, "알림이 켜진 고정 출현 보스가 없습니다.");
+  h += section("off", IC_OFF, "진행하지 않는 보스", "관리자가 알림을 끈 보스입니다.", off, "");
+
+  h += '<footer><p>"예상"이 붙은 시간은 마지막 출현 시각에 리젠 주기를 더한 값이라 처치 시점에 따라 달라질 수 있어요.</p>';
+  h += '<p>심연의 틈은 하루 1회 참여, 참여 보상은 매일 5시에 초기화됩니다.</p>';
+  var CONN = {live:"실시간 연결됨", connecting:"연결 중…", error:"서버 연결 실패 · 잠시 후 새로고침해 주세요", preview:"미리보기 모드 · 저장되지 않음"};
+  h += '<p>마지막 수정 ' + fullDate(state.updatedAt) + ' · ' + CONN[conn] + '</p></footer></div>';
+
+  var bulkR = document.getElementById("bulkRegion"), bulkN = document.getElementById("bulkNote");
+  var keep = bulkR ? {r:bulkR.value, n:bulkN.value} : null;
+  app.innerHTML = h;
+  if (keep && admin) { document.getElementById("bulkRegion").value = keep.r; document.getElementById("bulkNote").value = keep.n; }
+  renderSaveBar();
+}
+
+function editing(){
+  var a = document.activeElement;
+  return a && (a.tagName === "INPUT" || a.tagName === "SELECT" || a.tagName === "TEXTAREA") && app.contains(a);
+}
+function tick(){
+  var now = Date.now(), items = snapshot(now);
+  if (signature(items, now) !== lastSig && !editing() && !dlg.open) { render(); return; }
+  var nk = k(now), c = document.getElementById("clk");
+  if (c) c.textContent = hm(now) + ":" + pad(nk.getUTCSeconds());
+  items.forEach(function(x){
+    var el = app.querySelector('[data-row="' + x.b.id + '"]'); if (!el) return;
+    var t = texts(x.b, x.c, now);
+    el.querySelector('[data-f="lf"]').textContent = t.lf;
+    el.querySelector('[data-f="tg"]').textContent = t.tg;
+  });
+  var hd = heroData(items, now), hl = document.getElementById("heroLeft"), rb = document.getElementById("ringBar");
+  if (hd && hl) { hl.textContent = clockLeft(hd.x.c.at - now); rb.setAttribute("stroke-dashoffset", (RC * (1 - hd.p)).toFixed(1)); }
+}
+
+/* ---------- save bar ---------- */
+var bar = document.createElement("div");
+bar.className = "savebar glass"; bar.hidden = true;
+document.body.appendChild(bar);
+function renderSaveBar(){
+  bar.hidden = !(admin && dirty);
+  if (bar.hidden) return;
+  bar.innerHTML = '<div class="msg">' + esc(saveMsg || "저장하지 않은 변경사항이 있습니다.") + '</div><button class="btn" data-act="revert">되돌리기</button>' + (canWrite ? '<button class="btn primary" data-act="save">변경사항 저장</button>' : "");
+}
+function touch(full){
+  state.updatedAt = Date.now();
+  dirty = JSON.stringify(state) !== saved; saveMsg = "";
+  if (full !== false) render(); else renderSaveBar();
+}
+
+/* ---------- dialogs ---------- */
+var dlg = document.createElement("dialog");
+document.body.appendChild(dlg);
+var dlgOk = null;
+function showDlg(){
+  try { dlg.showModal(); } catch (e) { dlg.setAttribute("open", ""); }
+}
+function closeDlg(){ dlgOk = null; try { dlg.close(); } catch (e) { dlg.removeAttribute("open"); } }
+function openPanel(html, okLabel, onOk){
+  dlg.innerHTML = '<div>' + html + '<div class="foot"><button type="button" class="btn" data-d="cancel">취소</button><button type="button" class="btn primary" data-d="ok">' + okLabel + '</button></div></div>';
+  dlgOk = onOk;
+  showDlg();
+  var f = dlg.querySelector("input"); if (f) f.focus();
+}
+function runOk(){ if (dlgOk && dlgOk() !== false) closeDlg(); }
+dlg.addEventListener("click", function(e){
+  var d = e.target.closest("[data-d]"); if (!d) return;
+  if (d.getAttribute("data-d") === "cancel") closeDlg(); else runOk();
+});
+dlg.addEventListener("keydown", function(e){
+  if (e.key === "Enter" && dlgOk && e.target.tagName === "INPUT") { e.preventDefault(); runOk(); }
+});
+dlg.addEventListener("close", function(){ dlgOk = null; });
+
+var toastEl = document.createElement("div");
+toastEl.className = "toast glass"; toastEl.setAttribute("role", "status"); toastEl.setAttribute("aria-live", "polite");
+document.body.appendChild(toastEl);
+var toastTimer = null;
+function toast(msg, kind){
+  toastEl.className = "toast glass " + (kind || "ok");
+  toastEl.innerHTML = '<span class="ti" aria-hidden="true">' + (kind === "bad" ? "!" : "✓") + '</span><span>' + esc(msg) + '</span>';
+  void toastEl.offsetWidth; toastEl.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2800);
+}
+function find(id){ for (var i = 0; i < state.bosses.length; i++) if (state.bosses[i].id === id) return state.bosses[i]; }
+
+function loginOk(){
+  render();
+  setTimeout(function(){ toast("관리자 로그인에 성공했습니다.", "ok"); }, 50);
+}
+function loginFail(msg){
+  var er = document.getElementById("pwErr"), pw = document.getElementById("pw");
+  if (!er) return;
+  er.textContent = msg; er.hidden = true; void er.offsetWidth; er.hidden = false;
+  pw.value = ""; pw.focus();
+}
+function loginDlg(){
+  openPanel('<h3>관리자 로그인</h3><p class="hint">관리자 비밀번호를 입력하세요.</p><label class="l" for="pw">비밀번호</label><input class="field" type="password" id="pw" autocomplete="current-password" style="width:100%"><div class="alert" id="pwErr" role="alert" hidden>비밀번호가 틀렸습니다. 다시 입력해 주세요.</div>', "로그인", function(){
+    var pw = document.getElementById("pw").value;
+    if (!LIVE) {
+      if (pw !== PW) { loginFail("비밀번호가 틀렸습니다. 다시 입력해 주세요."); return false; }
+      admin = true; try { sessionStorage.setItem("boss-admin", "1"); } catch (e) {}
+      loginOk(); return;
+    }
+    if (!pw) { loginFail("비밀번호를 입력해 주세요."); return false; }
+    var btn = dlg.querySelector('[data-d="ok"]'); btn.disabled = true; btn.textContent = "확인 중…"; loginPending = true;
+    auth.signInWithEmailAndPassword(CFG.adminEmail, pw).then(function(){
+      closeDlg();
+    }).catch(function(err){
+      btn.disabled = false; btn.textContent = "로그인";
+      var c = err && err.code;
+      if (c === "auth/too-many-requests") loginFail("시도가 너무 많아요. 잠시 후 다시 시도해 주세요.");
+      else if (c === "auth/network-request-failed") loginFail("인터넷 연결을 확인해 주세요.");
+      else loginFail("비밀번호가 틀렸습니다. 다시 입력해 주세요.");
+    });
+    return false;
+  });
+}
+
+function timeDlg(b){
+  var now = Date.now(), c = compute(b, now), cur = c.st === "up" ? c.at : now, d = k(cur);
+  var dateV = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate());
+  var mode = "rel";
+  openPanel('<h3>' + esc(b.name) + ' 시간 수정</h3>' +
+    '<div class="seg" role="group" style="margin-top:10px"><button type="button" data-m="rel" aria-pressed="true">남은 시간으로</button><button type="button" data-m="abs" aria-pressed="false">출현 시각으로</button></div>' +
+    '<div id="mRel"><label class="l">지금부터 몇 시간 몇 분 후 출현?</label><div class="r2"><input class="field" type="number" id="rh" min="0" max="99" value="0"> 시간 <input class="field" type="number" id="rm" min="0" max="59" value="0"> 분</div></div>' +
+    '<div id="mAbs" hidden><label class="l">출현 시각 (한국 시간)</label><div class="r2"><input class="field" type="date" id="ad" value="' + dateV + '"><input class="field" type="time" id="at" value="' + hm(cur) + '"></div></div>' +
+    '<label class="l">리젠 주기</label><div class="r2"><input class="field" type="number" id="ih" min="0" max="99" value="' + (b.interval ? Math.floor(b.interval / 60) : "") + '"> 시간 <input class="field" type="number" id="im" min="0" max="59" value="' + (b.interval ? b.interval % 60 : "") + '"> 분</div>' +
+    '<div class="err" id="tErr"></div>', "적용", function(){
+      var at;
+      if (mode === "rel") at = Math.round((Date.now() + (+document.getElementById("rh").value || 0) * H + (+document.getElementById("rm").value || 0) * M) / M) * M;
+      else {
+        var dv = document.getElementById("ad").value, tv = document.getElementById("at").value;
+        if (!dv || !tv) { document.getElementById("tErr").textContent = "날짜와 시각을 모두 입력하세요."; return false; }
+        var p = dv.split("-"), q = tv.split(":"); at = Date.UTC(+p[0], +p[1] - 1, +p[2], +q[0], +q[1]) - KST;
+      }
+      var iv = (+document.getElementById("ih").value || 0) * 60 + (+document.getElementById("im").value || 0);
+      b.interval = iv > 0 ? iv : null; b.anchor = at; b.alive = false;
+      touch();
+    });
+  dlg.querySelectorAll("[data-m]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      mode = btn.getAttribute("data-m");
+      dlg.querySelectorAll("[data-m]").forEach(function(x){ x.setAttribute("aria-pressed", x === btn); });
+      document.getElementById("mRel").hidden = mode !== "rel"; document.getElementById("mAbs").hidden = mode !== "abs";
+    });
+  });
+}
+
+/* ---------- screenshot flow ---------- */
+var shot = null;
+function guessTime(file){
+  var m = file.name.match(/(20\d{2})[-_.]?(\d{2})[-_.]?(\d{2})[-_ T.]?(\d{2})[-_.:]?(\d{2})(?:[-_.:]?(\d{2}))?/);
+  if (m && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60)
+    return {t: Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) - KST, src:"파일 이름"};
+  if (file.lastModified) return {t: Math.floor(file.lastModified / M) * M, src:"파일 저장 시각"};
+  return {t: Math.floor(Date.now() / M) * M, src:"첨부한 시각"};
+}
+function shotDlg(){
+  shot = {files: [], base: null, src: "", rows: null};
+  dlg.innerHTML = '<div><h3>스크린샷으로 시간 갱신</h3><p class="hint">게임의 콘텐츠 현황판을 지역별로 캡처해서 올려주세요. 여러 장을 한 번에 고를 수 있어요. 스크린샷은 저장되지 않고 이 화면에서만 보여요.</p>' +
+    '<label class="picker">이미지 선택<input type="file" id="shotFiles" accept="image/*" multiple></label>' +
+    '<div class="thumbs" id="shotThumbs"></div><div id="shotStep"></div>' +
+    '<div class="foot"><button class="btn" type="button" data-s="close">닫기</button></div></div>';
+  dlgOk = null; showDlg();
+  document.getElementById("shotThumbs").addEventListener("click", function(e){ if (e.target.tagName === "IMG") e.target.classList.toggle("big"); });
+  document.getElementById("shotFiles").addEventListener("change", function(e){
+    var fs = Array.prototype.slice.call(e.target.files || []);
+    if (!fs.length) return;
+    shot.files = fs;
+    document.getElementById("shotThumbs").innerHTML = fs.map(function(f){ return '<img alt="' + esc(f.name) + '" src="' + URL.createObjectURL(f) + '">'; }).join("");
+    var g = guessTime(fs[0]); shot.base = g.t; shot.src = g.src;
+    stepConfirm();
+  });
+}
+function step(html){ document.getElementById("shotStep").innerHTML = html; }
+function stepConfirm(){
+  var warn = Date.now() - shot.base > 6 * H ? '<p class="hint" style="color:var(--soon)">6시간 이상 지난 스크린샷이에요. 시간이 맞는지 꼭 확인해 주세요.</p>' : shot.base > Date.now() + 5 * M ? '<p class="hint" style="color:var(--soon)">현재보다 미래 시각이에요. 시간을 다시 확인해 주세요.</p>' : "";
+  step('<div class="ask">스크린샷을 찍은 시점이 <b>' + askDate(shot.base) + '</b>이 맞습니까?<p class="hint">' + shot.src + ' 기준으로 찾았어요.</p>' + warn + '</div>' +
+    '<div class="foot" style="justify-content:flex-start"><button class="btn primary" type="button" data-s="yes">네, 맞습니다</button><button class="btn" type="button" data-s="no">아니요, 직접 입력</button></div>');
+}
+function stepManualTime(){
+  var d = k(shot.base), dv = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate());
+  step('<div class="ask">스크린샷을 찍은 시각을 입력해 주세요 (한국 시간).<div class="r2" style="margin-top:10px"><input class="field" type="date" id="sd" value="' + dv + '"><input class="field" type="time" id="st" value="' + hm(shot.base) + '"></div></div>' +
+    '<div class="foot" style="justify-content:flex-start"><button class="btn primary" type="button" data-s="settime">이 시각으로 진행</button></div>');
+}
+function respawnBosses(){ return state.bosses.filter(function(b){ return b.type === "respawn"; }); }
+function stepRead(){
+  stepTable({}, "스크린샷을 보면서 보스별로 '○시간 ○분 후 출현'의 숫자를 입력하세요. 출현 중인 보스는 '출현 중'을 체크하세요. 이미지를 누르면 크게 볼 수 있어요.");
+}
+function stepTable(found, msg){
+  var rows = respawnBosses().map(function(b){
+    var r = found[b.id] || {}, live = r.status === "live", timer = r.status === "timer";
+    return '<tr data-b="' + b.id + '"><td><input type="checkbox" class="ap" aria-label="' + esc(b.name) + ' 적용"' + (live || timer ? " checked" : "") + '></td>' +
+      '<td><b>' + esc(b.name) + '</b><div class="hint" style="margin:0">' + RNAME[b.region] + '</div></td>' +
+      '<td style="white-space:nowrap"><input class="field rh" type="number" min="0" max="99" value="' + (timer ? (+r.hours || 0) : "") + '" aria-label="시간">시 <input class="field rm" type="number" min="0" max="59" value="' + (timer ? (+r.minutes || 0) : "") + '" aria-label="분">분</td>' +
+      '<td><label style="white-space:nowrap;font-size:12px"><input type="checkbox" class="lv"' + (live ? " checked" : "") + '> 출현 중</label></td>' +
+      '<td class="when num"></td></tr>';
+  }).join("");
+  step('<div class="ask" style="font-size:14px">기준 시각 <b>' + askDate(shot.base) + '</b><p class="hint">' + esc(msg) + '</p></div>' +
+    '<div class="tbl"><table class="res"><thead><tr><th>적용</th><th>보스</th><th>화면 표시 (○시 ○분 후)</th><th></th><th>출현 시각</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="foot"><button class="btn primary" type="button" data-s="apply">체크한 보스에 적용</button></div>');
+  var tbody = document.querySelector(".res tbody");
+  function upd(){
+    tbody.querySelectorAll("tr").forEach(function(tr){
+      var lv = tr.querySelector(".lv").checked, h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
+      tr.querySelector(".when").textContent = lv ? "출현 중" : (h !== "" || m !== "") ? (function(t){ return dayLabel(t, Date.now()) + " " + hm(t); })(shot.base + (+h || 0) * H + (+m || 0) * M) : "—";
+    });
+  }
+  tbody.addEventListener("input", function(e){
+    var tr = e.target.closest("tr");
+    if (e.target.matches(".rh,.rm,.lv")) tr.querySelector(".ap").checked = true;
+    upd();
+  });
+  upd();
+}
+function applyShot(){
+  var n = 0;
+  document.querySelectorAll(".res tbody tr").forEach(function(tr){
+    if (!tr.querySelector(".ap").checked) return;
+    var b = find(tr.getAttribute("data-b")); if (!b) return;
+    if (tr.querySelector(".lv").checked) { b.alive = true; b.anchor = shot.base; }
+    else {
+      var h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
+      if (h === "" && m === "") return;
+      b.alive = false; b.anchor = shot.base + (+h || 0) * H + (+m || 0) * M;
+    }
+    n++;
+  });
+  if (!n) { step('<div class="ask">적용할 보스를 하나 이상 체크해 주세요.</div>'); return; }
+  state.baseTime = shot.base; state.baseLabel = "스크린샷";
+  closeDlg(); saveMsg = ""; touch();
+  saveMsg = n + "마리 보스 시간을 갱신했어요. 저장하면 길드원 화면에 반영됩니다."; renderSaveBar();
+  toast(n + "마리 보스 시간을 갱신했습니다. 저장을 눌러 주세요.", "ok");
+}
+dlg.addEventListener("click", function(e){
+  var s = e.target.closest("[data-s]"); if (!s) return;
+  var a = s.getAttribute("data-s");
+  if (a === "close") closeDlg();
+  else if (a === "yes") stepRead();
+  else if (a === "no") stepManualTime();
+  else if (a === "settime") {
+    var dv = document.getElementById("sd").value, tv = document.getElementById("st").value;
+    if (!dv || !tv) return;
+    var p = dv.split("-"), q = tv.split(":"); shot.base = Date.UTC(+p[0], +p[1] - 1, +p[2], +q[0], +q[1]) - KST; shot.src = "직접 입력";
+    stepConfirm();
+  }
+  else if (a === "apply") applyShot();
+});
+
+/* ---------- save (Firestore) ---------- */
+function save(){
+  if (!LIVE) { saveMsg = "미리보기 모드라 저장되지 않아요. 설정에 Firebase 값을 넣어 주세요."; renderSaveBar(); toast(saveMsg, "bad"); return; }
+  saveMsg = "저장 중…"; renderSaveBar();
+  var json = JSON.stringify(state);
+  docRef.set({ json: json, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }).then(function(){
+    saved = json; dirty = false; saveMsg = ""; renderSaveBar();
+    toast("저장했습니다. 길드원 화면에 반영됩니다.", "ok");
+  }).catch(function(err){
+    var c = err && err.code;
+    if (c === "permission-denied") saveMsg = "저장 권한이 없어요. 관리자 로그인을 다시 해 주세요.";
+    else if (c === "unavailable") saveMsg = "서버에 연결할 수 없어요. 인터넷 연결을 확인해 주세요.";
+    else saveMsg = "저장하지 못했어요 (" + (c || "오류") + "). 다시 시도해 주세요.";
+    renderSaveBar(); toast(saveMsg, "bad");
+  });
+}
+
+/* ---------- live sync ---------- */
+if (LIVE) {
+  docRef.onSnapshot(function(snap){
+    conn = "live";
+    if (snap.exists) {
+      var d = snap.data(), next = null;
+      try { next = JSON.parse(d.json); } catch (e) {}
+      if (next && next.bosses) {
+        if (!dirty) { state = next; saved = d.json; render(); }
+        else if (d.json !== saved) { saveMsg = "다른 곳에서 수정된 내용이 있어요. 저장하면 지금 화면 내용으로 덮어씁니다."; renderSaveBar(); }
+        return;
+      }
+    }
+    render();
+  }, function(){ conn = "error"; render(); });
+  auth.onAuthStateChanged(function(u){
+    var was = admin;
+    admin = !!(u && u.email && u.email.toLowerCase() === String(CFG.adminEmail).toLowerCase());
+    if (admin && loginPending) { loginPending = false; loginOk(); }
+    else if (admin !== was) render();
+  });
+}
+
+/* ---------- events ---------- */
+function onClick(e){
+  var t = e.target.closest("[data-tab],[data-act]"); if (!t) return;
+  var tb = t.getAttribute("data-tab");
+  if (tb) { tab = tb; try { sessionStorage.setItem("boss-tab", tab); } catch (er) {} render(); return; }
+  var act = t.getAttribute("data-act"), b = find(t.getAttribute("data-id"));
+  if (act === "login") return loginDlg();
+  if (act === "logout") {
+    if (LIVE) { auth.signOut().then(function(){ toast("게스트 모드로 전환했습니다.", "ok"); }); return; }
+    admin = false; try { sessionStorage.removeItem("boss-admin"); } catch (er) {} render(); toast("게스트 모드로 전환했습니다.", "ok"); return;
+  }
+  if (!admin) return;
+  if (act === "shot") return shotDlg();
+  if (act === "toggle" && b) {
+    b.enabled = !b.enabled; touch();
+    toast(b.name + (b.enabled ? " 알림을 켰습니다." : " 알림을 껐습니다. 안내 문구를 입력해 주세요."), "ok");
+    if (!b.enabled) { var inp = app.querySelector('[data-note="' + b.id + '"]'); if (inp) inp.focus(); }
+    return;
+  }
+  if (act === "kill" && b) { b.alive = false; b.anchor = b.interval ? Math.round(Date.now() / M) * M + b.interval * M : null; touch(); return; }
+  if (act === "time" && b) return timeDlg(b);
+  if (act === "bulkoff" || act === "bulkon") {
+    var r = document.getElementById("bulkRegion").value, n = document.getElementById("bulkNote").value.trim();
+    state.bosses.forEach(function(x){ if (x.region === r) { x.enabled = act === "bulkon"; if (act === "bulkoff" && n) x.note = n; } });
+    touch(); return;
+  }
+  if (act === "revert") { state = JSON.parse(saved); dirty = false; saveMsg = ""; render(); return; }
+  if (act === "save") return save();
+}
+app.addEventListener("click", onClick);
+bar.addEventListener("click", onClick);
+app.addEventListener("input", function(e){
+  var id = e.target.getAttribute && e.target.getAttribute("data-note");
+  if (!id) return;
+  var b = find(id); if (!b) return;
+  b.note = e.target.value; touch(false);
+});
+window.addEventListener("beforeunload", function(e){ if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+render();
+setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
