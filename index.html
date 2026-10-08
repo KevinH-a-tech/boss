@@ -355,6 +355,13 @@ dialog{background:linear-gradient(180deg,#1f1b15,#15130f);border-color:rgba(227,
 footer{color:var(--faint)}
 :focus-visible{outline-color:var(--gold-hi)}
 
+/* ---- urgent: 5 minutes or less ---- */
+.row.urgent .chip{background:rgba(255,92,80,.16);box-shadow:inset 0 0 0 1px rgba(255,92,80,.55)}
+.row.urgent .chip .hm,.row.urgent .chip .dy,.row.urgent .lf,.row.urgent .nm{color:#ff6a5c}
+.hero.urgent .ring .bar{stroke:#ff6a5c}
+.hero.urgent .ring .big,.hero.urgent .at{color:#ff6a5c}
+.hero.urgent{border-color:rgba(255,92,80,.4)}
+
 @media (max-width:420px){
   .hero{gap:14px;padding:18px 16px}
   .ring{width:112px;height:112px}
@@ -377,7 +384,7 @@ footer{color:var(--faint)}
 "use strict";
 var PW = "3383";
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
-var LIVE_FIXED = 30 * M, LIVE_RESPAWN = 15 * M;
+var LIVE_FIXED = 0, LIVE_RESPAWN = 0, URGENT = 5 * M;
 var REGIONS = [["all","전체"],["thessalia","테살리아"],["zahab","자하브"],["tartaros","타르타로스"],["invasion","침공"]];
 var RNAME = {thessalia:"테살리아",zahab:"자하브",tartaros:"타르타로스",invasion:"침공"};
 var WD = ["일","월","화","수","목","금","토"];
@@ -462,10 +469,6 @@ function compute(b, now){
     if (last !== null && now - last < LIVE_FIXED) return {st:"live", since:last};
     return {st:"up", at:next, certain:true, pending: now < start};
   }
-  if (b.alive) {
-    if (now - b.anchor > D) return {st:"unknown", why:"처치 시각 미기록"};
-    return {st:"live", since:b.anchor, aliveSeen:true};
-  }
   if (!b.anchor) return {st:"unknown", why:"시간 미등록"};
   if (now < b.anchor) return {st:"up", at:b.anchor, certain:true};
   var iv = b.interval ? b.interval * M : 0;
@@ -484,6 +487,7 @@ function texts(b, c, now){
 }
 var SOON = 60 * M;
 function isSoon(b, c, now){ return b.enabled && c.st === "up" && c.at - now <= SOON; }
+function isUrgent(b, c, now){ return b.enabled && c.st === "up" && c.at - now <= URGENT; }
 
 /* ---------- render ---------- */
 var app = document.getElementById("app");
@@ -495,6 +499,7 @@ function rowHtml(b, c, now){
   if (c.st === "live") cls.push("live");
   if (c.st === "up" && !c.certain) cls.push("est");
   if (isSoon(b, c, now)) cls.push("soon");
+  if (isUrgent(b, c, now)) cls.push("urgent");
   var where = esc(RNAME[b.region]) + (b.loc && b.loc !== RNAME[b.region] ? " · " + esc(b.loc) : "");
   var h = '<div class="' + cls.join(" ") + '" data-row="' + b.id + '">';
   h += '<div class="chip"><div class="hm num" data-f="hm">' + t.hm + '</div><div class="dy" data-f="dy">' + t.dy + '</div></div>';
@@ -517,7 +522,7 @@ function snapshot(now){
   return state.bosses.map(function(b){ return {b:b, c:compute(b, now)}; });
 }
 function signature(items, now){
-  return items.map(function(x){ return x.b.id + x.c.st + (x.c.at || "") + isSoon(x.b, x.c, now); }).join("|") + tab + admin;
+  return items.map(function(x){ return x.b.id + x.c.st + (x.c.at || "") + isSoon(x.b, x.c, now) + isUrgent(x.b, x.c, now); }).join("|") + tab + admin;
 }
 
 function heroData(items, now){
@@ -548,8 +553,8 @@ function render(){
 
   var hd = heroData(items, now);
   if (hd) {
-    var nb = hd.x.b, soon = hd.x.c.at - now <= SOON;
-    h += '<section class="hero glass ' + (nb.type === "fixed" ? "fixed" : "respawn") + (soon ? " soon" : "") + '" id="hero">';
+    var nb = hd.x.b, soon = hd.x.c.at - now <= SOON, urgent = hd.x.c.at - now <= URGENT;
+    h += '<section class="hero glass ' + (nb.type === "fixed" ? "fixed" : "respawn") + (soon ? " soon" : "") + (urgent ? " urgent" : "") + '" id="hero">';
     h += '<div class="ring"><svg width="132" height="132" viewBox="0 0 132 132" aria-hidden="true"><defs><linearGradient id="ringGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3d08a"/><stop offset="1" stop-color="#c48d3a"/></linearGradient></defs><circle class="track" cx="66" cy="66" r="58" fill="none" stroke-width="10"/><circle class="bar" id="ringBar" cx="66" cy="66" r="58" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + RC.toFixed(1) + '" stroke-dashoffset="' + (RC * (1 - hd.p)).toFixed(1) + '" transform="rotate(-90 66 66)"/></svg>';
     h += '<div class="mid"><div class="big num" id="heroLeft">' + clockLeft(hd.x.c.at - now) + '</div><div class="cap">남음</div></div></div>';
     h += '<div style="min-width:0"><div class="lbl">다음 보스</div><div class="who">' + esc(hd.names) + '</div>';
