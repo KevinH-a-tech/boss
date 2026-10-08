@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://kevinh-a-tech.github.io/boss/">
 <meta property="og:title" content="의정부시 길드 보스 스케쥴표">
-<meta property="og:description" content="제우스: 오만의신 · 포세이돈2 | 실시간 보스 출현 시간 · 남은 시간 한눈에">
+<meta property="og:description" content="제우스: 오만의신 · 포세이돈2">
 <meta property="og:image" content="https://kevinh-a-tech.github.io/boss/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -406,6 +406,11 @@ footer{color:var(--faint)}
 .ask ol{margin:8px 0 0;padding-left:20px}
 .ask li{margin:2px 0}
 
+.homebtn{min-height:36px;font-size:12.5px}
+.guide{font-size:14px;line-height:1.7;margin-top:10px}
+.guide ol{padding-left:20px;margin:6px 0}
+footer .contact{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,235,200,.07);color:#9f9584}
+
 @media (max-width:420px){
   .hero{gap:14px;padding:18px 16px}
   .ring{width:112px;height:112px}
@@ -676,7 +681,8 @@ function render(){
   h += '<header class="top"><div><div class="game">제우스: 오만의신 · 포세이돈2</div><h1>의정부시 길드<br>보스 스케쥴표</h1></div>';
   h += '<div class="modebox">' + (admin
     ? '<span class="mode glass admin" role="status"><span class="dot"></span>관리자 모드</span><button class="pill glass" data-act="logout">로그아웃</button>'
-    : '<span class="mode glass" role="status"><span class="dot"></span>게스트 · 읽기 전용</span><button class="pill glass admin" data-act="login">관리자 로그인</button>') + '</div>';
+    : '<span class="mode glass" role="status"><span class="dot"></span>게스트 · 읽기 전용</span><button class="pill glass admin" data-act="login">관리자 로그인</button>') +
+    (isStandalone() ? '' : '<button class="pill glass homebtn" data-act="install">홈 화면에 추가</button>') + '</div>';
   h += '</header>';
 
   var hd = heroData(items, now);
@@ -698,8 +704,6 @@ function render(){
 
   if (admin) {
     h += '<section class="admin-panel glass"><h2>관리자 도구</h2>';
-    var age = now - (state.baseTime || 0);
-    if (age > 6 * H) h += '<div class="stale" role="status"><b>스크린샷 갱신이 필요해요.</b> 마지막 갱신(' + fullDate(state.baseTime) + ') 후 ' + Math.floor(age / H) + '시간이 지나 예상 시간이 실제와 어긋날 수 있어요.</div>';
     h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button>' + '</div>';
     h += '<div class="line"><select class="field" id="bulkRegion" aria-label="지역">' + REGIONS.slice(1).map(function(r){ return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join("") + '</select>';
     h += '<input class="field" type="text" id="bulkNote" maxlength="60" placeholder="지역 안내 문구" style="flex:1;min-width:150px" aria-label="지역 안내 문구">';
@@ -729,9 +733,9 @@ function render(){
 
   h += '<footer><p>"예상"이 붙은 시간은 마지막 출현 시각에 리젠 주기를 더한 값이라 처치 시점에 따라 달라질 수 있어요.</p>';
   h += '<p>심연의 틈은 하루 1회 참여, 참여 보상은 매일 5시에 초기화됩니다.</p>';
-  h += '<p class="install">휴대폰 홈 화면에 추가하면 앱처럼 바로 열 수 있어요. 안드로이드: 브라우저 메뉴(⋮) → 홈 화면에 추가 · 아이폰: Safari 공유 버튼 → 홈 화면에 추가' + (installEvt ? ' <button class="btn" data-act="install">홈 화면에 추가</button>' : '') + '</p>';
   var CONN = {live:"실시간 연결됨", connecting:"연결 중…", error:"서버 연결 실패 · 잠시 후 새로고침해 주세요", preview:"미리보기 모드 · 저장되지 않음"};
-  h += '<p>마지막 수정 ' + fullDate(state.updatedAt) + ' · ' + CONN[conn] + '</p></footer></div>';
+  h += '<p>마지막 수정 ' + fullDate(state.updatedAt) + ' · ' + CONN[conn] + '</p>';
+  h += '<p class="contact">문의 · 홍신나</p></footer></div>';
 
   var bulkR = document.getElementById("bulkRegion"), bulkN = document.getElementById("bulkNote");
   var keep = bulkR ? {r:bulkR.value, n:bulkN.value} : null;
@@ -809,6 +813,19 @@ function toast(msg, kind){
   clearTimeout(toastTimer); toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2800);
 }
 function find(id){ for (var i = 0; i < state.bosses.length; i++) if (state.bosses[i].id === id) return state.bosses[i]; }
+
+function isStandalone(){
+  try { return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch (e) { return false; }
+}
+function installGuide(){
+  var ua = navigator.userAgent || "", ios = /iPhone|iPad|iPod/i.test(ua), kakao = /KAKAOTALK/i.test(ua);
+  var body = kakao
+    ? '<p>카카오톡 안에서 열린 화면이라 바로 추가할 수 없어요.</p><ol><li>오른쪽 아래(또는 위)의 <b>⋮ / 공유</b> 버튼을 누릅니다.</li><li><b>다른 브라우저로 열기</b>를 고릅니다.</li><li>열린 브라우저에서 이 버튼을 다시 눌러 주세요.</li></ol>'
+    : ios
+    ? '<ol><li>Safari 아래쪽의 <b>공유 버튼</b>(네모에 위 화살표)을 누릅니다.</li><li>목록을 내려 <b>홈 화면에 추가</b>를 누릅니다.</li><li>오른쪽 위 <b>추가</b>를 누르면 끝이에요.</li></ol><p class="hint">크롬 등 다른 앱에서 열었다면 Safari로 열어 주세요.</p>'
+    : '<ol><li>브라우저 오른쪽 위의 <b>⋮ 메뉴</b>를 누릅니다.</li><li><b>홈 화면에 추가</b> 또는 <b>앱 설치</b>를 누릅니다.</li><li><b>추가 / 설치</b>를 누르면 끝이에요.</li></ol><p class="hint">PC 크롬은 주소창 오른쪽의 설치 아이콘을 눌러도 돼요.</p>';
+  openPanel('<h3>홈 화면에 추가</h3><p class="hint">추가하면 앱처럼 아이콘을 눌러 바로 열 수 있어요.</p><div class="guide">' + body + '</div>', "확인", function(){});
+}
 
 function loginOk(){
   render();
@@ -1148,7 +1165,10 @@ function onClick(e){
   if (tb) { tab = tb; try { sessionStorage.setItem("boss-tab", tab); } catch (er) {} render(); return; }
   var act = t.getAttribute("data-act"), b = find(t.getAttribute("data-id"));
   if (act === "login") return loginDlg();
-  if (act === "install") { if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(function(){ installEvt = null; render(); }); } return; }
+  if (act === "install") {
+    if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(function(){ installEvt = null; render(); }); return; }
+    return installGuide();
+  }
   if (act === "logout") {
     if (LIVE) { auth.signOut().then(function(){ toast("게스트 모드로 전환했습니다.", "ok"); }); return; }
     admin = false; try { sessionStorage.removeItem("boss-admin"); } catch (er) {} render(); toast("게스트 모드로 전환했습니다.", "ok"); return;
