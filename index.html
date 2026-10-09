@@ -411,6 +411,24 @@ footer{color:var(--faint)}
 .guide ol{padding-left:20px;margin:6px 0}
 footer .contact{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,235,200,.07);color:#9f9584}
 
+/* ---- just spawned (up to 5 min): shown at the bottom of its list ---- */
+.row.recent .chip{background:rgba(255,235,200,.04);box-shadow:inset 0 0 0 1px rgba(255,235,200,.12)}
+.row.recent .chip .hm{color:#b9ad98}
+.row.recent .chip .dy{color:#857d6f}
+.row.recent .nm{color:#cfc4b0}
+.row.recent .lf{color:#e6d9bf}
+.row.recent .tg{color:#857d6f}
+
+/* ---- 5-minute spawn alert badge ---- */
+.rbadge{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;font-size:11.5px;font-weight:700;vertical-align:2px;background:rgba(240,138,108,.16);color:#f39a80;box-shadow:inset 0 0 0 1px rgba(240,138,108,.4)}
+.row.justspawned .chip{box-shadow:inset 0 0 0 1px rgba(240,138,108,.35)}
+.rt-time{font-family:var(--num);font-size:12px;color:#f39a80;margin-left:4px}
+/* ---- view counter ---- */
+.views{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;border-radius:14px;background:rgba(255,235,200,.04);border:1px solid rgba(255,235,200,.07);font-size:13.5px}
+.views .vk{color:#9f9584}
+#viewStats{display:flex;gap:14px;flex-wrap:wrap;color:#cfc4b0}
+#viewStats b{color:#f0c77a;font-family:var(--num);font-weight:800;margin-left:3px}
+
 @media (max-width:420px){
   .hero{gap:14px;padding:18px 16px}
   .ring{width:112px;height:112px}
@@ -433,7 +451,7 @@ footer .contact{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,2
 "use strict";
 var PW = "3383";
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
-var LIVE_FIXED = 0, LIVE_RESPAWN = 0, URGENT = 5 * M;
+var RECENT = 5 * M, URGENT = 5 * M;
 var REGIONS = [["all","전체"],["thessalia","테살리아"],["zahab","자하브"],["tartaros","타르타로스"],["invasion","침공"]];
 var RNAME = {thessalia:"테살리아",zahab:"자하브",tartaros:"타르타로스",invasion:"침공"};
 var WD = ["일","월","화","수","목","금","토"];
@@ -453,6 +471,7 @@ var saved = JSON.stringify(state);
 var dirty = false, tab = "all", admin = false;
 var sampleNs = null, canWrite = true, saveMsg = "", installEvt = null;
 var CFG = window.BOSS_CONFIG || {}, LIVE = false, auth = null, docRef = null, conn = "preview", loginPending = false;
+var statsCol = null, views = null, viewsUnsub = null;
 var lastSig = "";
 
 if (CFG.firebase && CFG.firebase.apiKey && window.firebase) {
@@ -460,6 +479,7 @@ if (CFG.firebase && CFG.firebase.apiKey && window.firebase) {
     firebase.initializeApp(CFG.firebase);
     auth = firebase.auth();
     docRef = firebase.firestore().collection("schedule").doc("main");
+    statsCol = firebase.firestore().collection("stats");
     LIVE = true; conn = "connecting";
   } catch (e) { LIVE = false; conn = "preview"; }
 }
@@ -598,22 +618,28 @@ function compute(b, now){
       if (list[i] <= now) last = list[i];
       else if (next === null) next = list[i];
     }
-    if (last !== null && now - last < LIVE_FIXED) return {st:"live", since:last};
-    return {st:"up", at:next, certain:true, pending: now < start};
+    return {st:"up", at:next, certain:true, pending: now < start, recent: (last !== null && now - last < RECENT) ? last : null};
   }
   if (!b.anchor) return {st:"unknown", why:"시간 미등록"};
   if (now < b.anchor) return {st:"up", at:b.anchor, certain:true};
   var iv = b.interval ? b.interval * M : 0;
   if (!iv) {
-    if (now - b.anchor < LIVE_RESPAWN) return {st:"live", since:b.anchor};
-    return {st:"unknown", why:"리젠 주기 미정"};
+    return {st:"unknown", why:"리젠 주기 미정", recent: now - b.anchor < RECENT ? b.anchor : null};
   }
   var n = Math.floor((now - b.anchor) / iv), lastR = b.anchor + n * iv;
-  if (now - lastR < LIVE_RESPAWN) return {st:"live", since:lastR};
-  return {st:"up", at:lastR + iv, certain:false};
+  return {st:"up", at:lastR + iv, certain:false, recent: now - lastR < RECENT ? lastR : null};
+}
+function recentText(c, now){
+  if (!c.recent) return "";
+  var ago = Math.floor((now - c.recent) / M);
+  return (ago < 1 ? "방금" : ago + "분 전") + " 출현";
 }
 function texts(b, c, now){
   if (c.st === "live") return {hm:"출현", dy: c.aliveSeen ? "스샷 확인" : hm(c.since), lf:"출현 중", tg: c.aliveSeen ? "처치 시각 미기록" : since(now - c.since)};
+  if (c.st === "recent") {
+    var ago = Math.floor((now - c.since) / M);
+    return {hm:hm(c.since), dy:"출현", lf:(ago < 1 ? "방금" : ago + "분 전") + " 출현", tg: c.next ? "다음 " + dayLabel(c.next, now) + " " + hm(c.next) + (b.type === "fixed" ? "" : " 예상") : (b.type === "fixed" ? fixedLabel(b) : ivLabel(b.interval))};
+  }
   if (c.st === "up") return {hm:hm(c.at), dy:dayLabel(c.at, now), lf:left(c.at - now) + " 후", tg: b.type === "fixed" ? fixedLabel(b) + (c.pending ? " · 10/14부터" : "") : ivLabel(b.interval)};
   return {hm:"—", dy:"미정", lf:c.why, tg: b.type === "fixed" ? fixedLabel(b) : ivLabel(b.interval)};
 }
@@ -629,13 +655,14 @@ function rowHtml(b, c, now){
   var t = texts(b, c, now), cls = ["row", b.type === "fixed" ? "fixed" : "respawn"];
   if (!b.enabled) cls.push("off");
   if (c.st === "live") cls.push("live");
+  if (c.recent && b.enabled) cls.push("justspawned");
   if (c.st === "up" && !c.certain) cls.push("est");
   if (isSoon(b, c, now)) cls.push("soon");
   if (isUrgent(b, c, now)) cls.push("urgent");
   var where = esc(RNAME[b.region]) + (b.loc && b.loc !== RNAME[b.region] ? " · " + esc(b.loc) : "");
   var h = '<div class="' + cls.join(" ") + '" data-row="' + b.id + '">';
   h += '<div class="chip"><div class="hm num" data-f="hm">' + t.hm + '</div><div class="dy" data-f="dy">' + t.dy + '</div></div>';
-  h += '<div style="min-width:0"><div class="nm">' + (b.lv ? '<span class="lv">Lv.' + b.lv + '</span>' : "") + esc(b.name) + '</div><div class="sub">' + where + '</div></div>';
+  h += '<div style="min-width:0"><div class="nm">' + (b.lv ? '<span class="lv">Lv.' + b.lv + '</span>' : "") + esc(b.name) + (c.recent ? ' <span class="rbadge" data-f="rb">' + recentText(c, now) + '</span>' : '') + '</div><div class="sub">' + where + '</div></div>';
   h += '<div class="rt"><div class="lf num" data-f="lf">' + esc(t.lf) + '</div><div class="tg" data-f="tg">' + esc(t.tg) + '</div></div>';
   if (!b.enabled && b.note && !admin) h += '<div class="note">' + esc(b.note) + '</div>';
   else if (b.info && b.enabled) h += '<div class="info">' + esc(b.info) + '</div>';
@@ -650,12 +677,12 @@ function rowHtml(b, c, now){
   return h + '</div>';
 }
 
-function sortKey(x){ return x.c.st === "live" ? -1 : x.c.st === "up" ? x.c.at : Infinity; }
+function sortKey(x){ return x.c.st === "live" ? -1 : x.c.st === "up" ? x.c.at : x.c.st === "recent" ? 9e15 + x.c.since : Infinity; }
 function snapshot(now){
   return state.bosses.map(function(b){ return {b:b, c:compute(b, now)}; });
 }
 function signature(items, now){
-  return items.map(function(x){ return x.b.id + x.c.st + (x.c.at || "") + isSoon(x.b, x.c, now) + isUrgent(x.b, x.c, now); }).join("|") + tab + admin;
+  return items.map(function(x){ return x.b.id + x.c.st + (x.c.at || "") + isSoon(x.b, x.c, now) + isUrgent(x.b, x.c, now) + (x.c.recent ? "r" : ""); }).join("|") + tab + admin;
 }
 
 function heroData(items, now){
@@ -698,12 +725,15 @@ function render(){
 
   var lives = items.filter(function(x){ return x.b.enabled && x.c.st === "live"; });
   h += '<div class="duo"><div class="tile glass"><div class="k">현재 시각 · 한국</div><div class="v num" id="clk">' + hm(now) + ':' + pad(nk.getUTCSeconds()) + '</div><div class="k">' + (nk.getUTCMonth() + 1) + '월 ' + nk.getUTCDate() + '일 (' + WD[nk.getUTCDay()] + ')</div></div>';
-  if (lives.length) h += '<div class="tile glass live"><div class="k">지금 출현 중</div><div class="v">' + lives.map(function(x){ return esc(x.b.name); }).join("<br>") + '</div></div>';
+  var recents = items.filter(function(x){ return x.b.enabled && x.c.recent; }).sort(function(a, c){ return c.c.recent - a.c.recent; });
+  if (recents.length) h += '<div class="tile glass live"><div class="k">방금 출현 (5분간 표시)</div><div class="v">' + recents.map(function(x){ return esc(x.b.name) + ' <span class="rt-time">' + hm(x.c.recent) + '</span>'; }).join("<br>") + '</div></div>';
+  else if (lives.length) h += '<div class="tile glass live"><div class="k">지금 출현 중</div><div class="v">' + lives.map(function(x){ return esc(x.b.name); }).join("<br>") + '</div></div>';
   else h += '<div class="tile glass"><div class="k">시간 기준</div><div class="v" style="font-size:15px;font-weight:700;font-family:var(--sans)">' + fullDate(state.baseTime) + '</div><div class="k">' + esc(state.baseLabel || "") + '</div></div>';
   h += '</div>';
 
   if (admin) {
     h += '<section class="admin-panel glass"><h2>관리자 도구</h2>';
+    if (LIVE) h += '<div class="views"><span class="vk">조회수</span><div id="viewStats">' + viewsHtml() + '</div></div>';
     h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button>' + '</div>';
     h += '<div class="line"><select class="field" id="bulkRegion" aria-label="지역">' + REGIONS.slice(1).map(function(r){ return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join("") + '</select>';
     h += '<input class="field" type="text" id="bulkNote" maxlength="60" placeholder="지역 안내 문구" style="flex:1;min-width:150px" aria-label="지역 안내 문구">';
@@ -758,6 +788,7 @@ function tick(){
     var t = texts(x.b, x.c, now);
     el.querySelector('[data-f="lf"]').textContent = t.lf;
     el.querySelector('[data-f="tg"]').textContent = t.tg;
+    var rb = el.querySelector('[data-f="rb"]'); if (rb) rb.textContent = recentText(x.c, now);
   });
   var hd = heroData(items, now), hl = document.getElementById("heroLeft"), rb = document.getElementById("ringBar");
   if (hd && hl) { hl.textContent = clockLeft(hd.x.c.at - now); rb.setAttribute("stroke-dashoffset", (RC * (1 - hd.p)).toFixed(1)); }
@@ -1135,6 +1166,38 @@ function save(){
   });
 }
 
+/* ---------- view counter (every load / refresh) ---------- */
+function dayKey(ms){ var d = k(ms); return "day_" + d.getUTCFullYear() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate()); }
+function countView(){
+  if (!statsCol) return;
+  try {
+    var inc = firebase.firestore.FieldValue.increment(1), b = firebase.firestore().batch();
+    b.set(statsCol.doc("total"), { count: inc }, { merge: true });
+    b.set(statsCol.doc(dayKey(Date.now())), { count: inc }, { merge: true });
+    b.commit().catch(function(e){ console.warn("조회수 기록 실패", e); });
+  } catch (e) {}
+}
+function watchViews(on){
+  if (!statsCol) return;
+  if (on && !viewsUnsub) {
+    var now = Date.now(), ids = ["total", dayKey(now), dayKey(now - D)], vals = {}, subs;
+    subs = ids.map(function(id){
+      return statsCol.doc(id).onSnapshot(function(snap){
+        vals[id] = snap.exists ? (snap.data().count || 0) : 0;
+        views = { total: vals[ids[0]], today: vals[ids[1]], yesterday: vals[ids[2]] };
+        var el = document.getElementById("viewStats"); if (el) el.innerHTML = viewsHtml();
+      }, function(){});
+    });
+    viewsUnsub = function(){ subs.forEach(function(u){ u(); }); viewsUnsub = null; };
+  } else if (!on && viewsUnsub) { viewsUnsub(); views = null; }
+}
+function viewsHtml(){
+  if (!views) return '조회수 불러오는 중…';
+  var f = function(n){ return (n == null ? 0 : n).toLocaleString("ko-KR"); };
+  return '<span>오늘 <b>' + f(views.today) + '</b></span><span>어제 <b>' + f(views.yesterday) + '</b></span><span>누적 <b>' + f(views.total) + '</b></span>';
+}
+if (LIVE) countView();
+
 /* ---------- live sync ---------- */
 if (LIVE) {
   docRef.onSnapshot(function(snap){
@@ -1153,6 +1216,7 @@ if (LIVE) {
   auth.onAuthStateChanged(function(u){
     var was = admin;
     admin = !!(u && u.email && u.email.toLowerCase() === String(CFG.adminEmail).toLowerCase());
+    watchViews(admin);
     if (admin && loginPending) { loginPending = false; loginOk(); }
     else if (admin !== was) render();
   });
