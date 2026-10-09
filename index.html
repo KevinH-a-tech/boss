@@ -438,6 +438,14 @@ footer .contact{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,2
 .parsed.ok{color:#f0c77a;font-weight:700}
 .parsed.bad{color:#ff6a5c}
 
+.ver{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:#cfc4b0}
+.ver .vk{color:#9f9584}
+.ver b{color:#f0c77a;font-family:var(--num);font-weight:800}
+.ver .vs{color:#9f9584}
+.ver .vs.ok{color:#8fd19e}
+.ver .vs.new{color:#f39a80;font-weight:700}
+.ver .btn{min-height:30px;font-size:12px;padding:0 10px}
+
 @media (max-width:420px){
   .hero{gap:14px;padding:18px 16px}
   .ring{width:112px;height:112px}
@@ -459,6 +467,8 @@ footer .contact{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,2
 (function(){
 "use strict";
 var PW = "3383";
+var BUILD = "2026-10-09 09:26"; // 이 파일을 만든 시각 (한국 시간)
+var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 var RECENT = 5 * M, URGENT = 5 * M;
 var REGIONS = [["all","전체"],["thessalia","테살리아"],["zahab","자하브"],["tartaros","타르타로스"],["invasion","침공"]];
@@ -743,6 +753,8 @@ function render(){
   if (admin) {
     h += '<section class="admin-panel glass"><h2>관리자 도구</h2>';
     if (LIVE) h += '<div class="views"><span class="vk">조회수</span><div id="viewStats">' + viewsHtml() + '</div></div>';
+    h += '<div class="ver" id="verBox">' + verHtml() + '</div>';
+    setTimeout(checkBuild, 0);
     h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button>' + '</div>';
     h += '<div class="line"><select class="field" id="bulkRegion" aria-label="지역">' + REGIONS.slice(1).map(function(r){ return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join("") + '</select>';
     h += '<input class="field" type="text" id="bulkNote" maxlength="60" placeholder="지역 안내 문구" style="flex:1;min-width:150px" aria-label="지역 안내 문구">';
@@ -854,6 +866,28 @@ function toast(msg, kind){
 }
 function find(id){ for (var i = 0; i < state.bosses.length; i++) if (state.bosses[i].id === id) return state.bosses[i]; }
 
+function buildLabel(b){
+  var m = String(b || "").match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/);
+  return m ? (+m[2]) + "월 " + (+m[3]) + "일 " + m[4] + ":" + m[5] : b;
+}
+function verHtml(){
+  var h = '<span class="vk">페이지 버전</span><b class="num">' + esc(buildLabel(BUILD)) + '</b> 제작';
+  if (!buildChecked) h += ' <span class="vs">· 최신 여부 확인 중…</span>';
+  else if (latestBuild === null) h += ' <span class="vs">· 최신 여부를 확인하지 못했어요</span>';
+  else if (latestBuild === BUILD) h += ' <span class="vs ok">· 최신 버전이에요</span>';
+  else h += ' <span class="vs new">· 새 버전(' + esc(buildLabel(latestBuild)) + ')이 올라와 있어요</span> <button class="btn" data-act="reload">새로고침</button>';
+  return h;
+}
+function checkBuild(){
+  if (buildChecked) return;
+  var url = location.pathname + "?vcheck=" + Date.now();
+  fetch(url, { cache: "no-store" }).then(function(r){ return r.ok ? r.text() : ""; }).then(function(t){
+    var m = t.match(/var BUILD = "([^"]+)"/);
+    latestBuild = m ? m[1] : null; buildChecked = true;
+  }).catch(function(){ latestBuild = null; buildChecked = true; }).then(function(){
+    var el = document.getElementById("verBox"); if (el) el.innerHTML = verHtml();
+  });
+}
 function isStandalone(){
   try { return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true; } catch (e) { return false; }
 }
@@ -1287,6 +1321,7 @@ function onClick(e){
   if (tb) { tab = tb; try { sessionStorage.setItem("boss-tab", tab); } catch (er) {} render(); return; }
   var act = t.getAttribute("data-act"), b = find(t.getAttribute("data-id"));
   if (act === "login") return loginDlg();
+  if (act === "reload") { location.replace(location.pathname + "?v=" + Date.now()); return; }
   if (act === "install") {
     if (installEvt) { installEvt.prompt(); installEvt.userChoice.finally(function(){ installEvt = null; render(); }); return; }
     return installGuide();
