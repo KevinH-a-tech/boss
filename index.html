@@ -596,6 +596,10 @@ function clockLeft(ms){
   return h + ":" + pad(m) + ":" + pad(s);
 }
 function since(ms){ var m = Math.floor(ms / M); return m < 60 ? m + "분 경과" : Math.floor(m / 60) + "시간 " + (m % 60) + "분 경과"; }
+/* 리젠 보스 처치 소요시간(초): 다음 젠 = 출현 + 처치 소요 + 리젠 주기 */
+var KILL_SEC = {35:5, 40:10, 45:15, 55:20, 60:25, 65:30};
+function killMs(b){ return (b && b.type === "respawn" && KILL_SEC[b.lv]) ? KILL_SEC[b.lv] * 1000 : 0; }
+function cycLabel(b){ var s = killMs(b) / 1000; return ivLabel(b.interval) + (b.interval && s ? " · 처치 " + s + "초" : ""); }
 function ivLabel(min){
   if (!min) return "리젠 주기 미정";
   if (min % 1440 === 0) return "리젠 " + (min / 1440) + "일";
@@ -641,7 +645,7 @@ function compute(b, now){
   }
   if (!b.anchor) return {st:"unknown", why:"시간 미등록"};
   if (now < b.anchor) return {st:"up", at:b.anchor, certain:true};
-  var iv = b.interval ? b.interval * M : 0;
+  var iv = b.interval ? b.interval * M + killMs(b) : 0;
   if (!iv) {
     return {st:"unknown", why:"리젠 주기 미정", recent: now - b.anchor < RECENT ? b.anchor : null};
   }
@@ -657,10 +661,10 @@ function texts(b, c, now){
   if (c.st === "live") return {hm:"출현", dy: c.aliveSeen ? "스샷 확인" : hm(c.since), lf:"출현 중", tg: c.aliveSeen ? "처치 시각 미기록" : since(now - c.since)};
   if (c.st === "recent") {
     var ago = Math.floor((now - c.since) / M);
-    return {hm:hm(c.since), dy:"출현", lf:(ago < 1 ? "방금" : ago + "분 전") + " 출현", tg: c.next ? "다음 " + dayLabel(c.next, now) + " " + hm(c.next) + (b.type === "fixed" ? "" : " 예상") : (b.type === "fixed" ? fixedLabel(b) : ivLabel(b.interval))};
+    return {hm:hm(c.since), dy:"출현", lf:(ago < 1 ? "방금" : ago + "분 전") + " 출현", tg: c.next ? "다음 " + dayLabel(c.next, now) + " " + hm(c.next) + (b.type === "fixed" ? "" : " 예상") : (b.type === "fixed" ? fixedLabel(b) : cycLabel(b))};
   }
-  if (c.st === "up") return {hm:hm(c.at), dy:dayLabel(c.at, now), lf:left(c.at - now) + " 후", tg: b.type === "fixed" ? fixedLabel(b) + (c.pending ? " · 10/14부터" : "") : ivLabel(b.interval)};
-  return {hm:"—", dy:"미정", lf:c.why, tg: b.type === "fixed" ? fixedLabel(b) : ivLabel(b.interval)};
+  if (c.st === "up") return {hm:hm(c.at), dy:dayLabel(c.at, now), lf:left(c.at - now) + " 후", tg: b.type === "fixed" ? fixedLabel(b) + (c.pending ? " · 10/14부터" : "") : cycLabel(b)};
+  return {hm:"—", dy:"미정", lf:c.why, tg: b.type === "fixed" ? fixedLabel(b) : cycLabel(b)};
 }
 var SOON = 60 * M;
 function isSoon(b, c, now){ return b.enabled && c.st === "up" && c.at - now <= SOON; }
@@ -1173,7 +1177,7 @@ function stepTable(found, msg){
       tr.style.opacity = on ? "1" : ".6";
       if (tr.getAttribute("data-t") === "r") {
         var b = find(tr.getAttribute("data-b")), base = rowBase(tr), lv = tr.querySelector(".lv").checked, h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
-        if (lv) { var nx = base + (b.interval || 0) * M; w.textContent = b.interval ? "다음 " + dayLabel(nx, now) + " " + hm(nx) : "출현 중"; }
+        if (lv) { var nx = base + (b.interval || 0) * M + killMs(b); w.textContent = b.interval ? "다음 " + dayLabel(nx, now) + " " + hm(nx) : "출현 중"; }
         else w.textContent = (h !== "" || m !== "") ? (function(t){ return dayLabel(t, now) + " " + hm(t); })(base + (+h || 0) * H + (+m || 0) * M) : "—";
       } else {
         var days = parseDays(tr.querySelector(".fdays").value), hours = parseHours(tr.querySelector(".fhrs").value), mi = +tr.querySelector(".fmin").value || 0;
@@ -1338,7 +1342,7 @@ function onClick(e){
     if (!b.enabled) { var inp = app.querySelector('[data-note="' + b.id + '"]'); if (inp) inp.focus(); }
     return;
   }
-  if (act === "kill" && b) { b.alive = false; b.anchor = b.interval ? Math.round(Date.now() / M) * M + b.interval * M : null; touch(); return; }
+  if (act === "kill" && b) { b.alive = false; b.anchor = b.interval ? Math.round(Date.now() / 1000) * 1000 + b.interval * M : null; touch(); return; }
   if (act === "time" && b) return timeDlg(b);
   if (act === "ftime" && b) return fixedDlg(b);
   if (act === "bulkoff" || act === "bulkon") {
