@@ -467,9 +467,20 @@ footer .contact{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,2
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-09 09:26"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-11 12:00"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
+/* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
+var clockOff = 0, clockOk = false;
+function nowT(){ return Date.now() + clockOff; }
+function syncClock(){
+  var t0 = Date.now();
+  fetch(location.pathname + "?tsync=" + t0, { method: "HEAD", cache: "no-store" }).then(function(r){
+    var t1 = Date.now(), d = Date.parse(r.headers.get("Date"));
+    if (isNaN(d) || t1 - t0 > 3000) return; // 응답이 너무 느리면 이번 측정은 버림
+    clockOff = Math.round(d + 500 + (t1 - t0) / 2 - t1); clockOk = true;
+  }).catch(function(){});
+}
 var RECENT = 5 * M, URGENT = 5 * M;
 var REGIONS = [["all","전체"],["thessalia","테살리아"],["zahab","자하브"],["tartaros","타르타로스"],["invasion","침공"]];
 var RNAME = {thessalia:"테살리아",zahab:"자하브",tartaros:"타르타로스",invasion:"침공"};
@@ -719,7 +730,7 @@ function heroData(items, now){
 var RC = 2 * Math.PI * 58;
 
 function render(){
-  var now = Date.now(), items = snapshot(now);
+  var now = nowT(), items = snapshot(now);
   lastSig = signature(items, now);
   var vis = items.filter(function(x){ return tab === "all" || x.b.region === tab; });
   var resp = vis.filter(function(x){ return x.b.enabled && x.b.type === "respawn"; }).sort(function(a, c){ return sortKey(a) - sortKey(c); });
@@ -789,7 +800,7 @@ function render(){
   h += '<footer><p>"예상"이 붙은 시간은 마지막 출현 시각에 리젠 주기를 더한 값이라 처치 시점에 따라 달라질 수 있어요.</p>';
   h += '<p>심연의 틈은 하루 1회 참여, 참여 보상은 매일 5시에 초기화됩니다.</p>';
   var CONN = {live:"실시간 연결됨", connecting:"연결 중…", error:"서버 연결 실패 · 잠시 후 새로고침해 주세요", preview:"미리보기 모드 · 저장되지 않음"};
-  h += '<p>마지막 수정 ' + fullDate(state.updatedAt) + ' · ' + CONN[conn] + '</p>';
+  h += '<p>마지막 수정 ' + fullDate(state.updatedAt) + ' · ' + CONN[conn] + (clockOk && Math.abs(clockOff) >= 2000 ? ' · 이 기기 시계 ' + Math.round(Math.abs(clockOff) / 1000) + '초 ' + (clockOff > 0 ? '느림' : '빠름') + ' (자동 보정됨)' : '') + '</p>';
   h += '<p class="contact">문의 · 홍신나</p></footer></div>';
 
   var bulkR = document.getElementById("bulkRegion"), bulkN = document.getElementById("bulkNote");
@@ -804,7 +815,7 @@ function editing(){
   return a && (a.tagName === "INPUT" || a.tagName === "SELECT" || a.tagName === "TEXTAREA") && app.contains(a);
 }
 function tick(){
-  var now = Date.now(), items = snapshot(now);
+  var now = nowT(), items = snapshot(now);
   if (signature(items, now) !== lastSig && !editing() && !dlg.open) { render(); return; }
   var nk = k(now), c = document.getElementById("clk");
   if (c) c.textContent = hm(now) + ":" + pad(nk.getUTCSeconds());
@@ -829,7 +840,7 @@ function renderSaveBar(){
   bar.innerHTML = '<div class="msg">' + esc(saveMsg || "저장하지 않은 변경사항이 있습니다.") + '</div><button class="btn" data-act="revert">되돌리기</button>' + (canWrite ? '<button class="btn primary" data-act="save">변경사항 저장</button>' : "");
 }
 function touch(full){
-  state.updatedAt = Date.now();
+  state.updatedAt = nowT();
   dirty = JSON.stringify(state) !== saved; saveMsg = "";
   if (full !== false) render(); else renderSaveBar();
 }
@@ -957,7 +968,7 @@ function fixedDlg(b){
 }
 
 function timeDlg(b){
-  var now = Date.now(), c = compute(b, now), cur = c.st === "up" ? c.at : now, d = k(cur);
+  var now = nowT(), c = compute(b, now), cur = c.st === "up" ? c.at : now, d = k(cur);
   var dateV = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate());
   var mode = "rel";
   openPanel('<h3>' + esc(b.name) + ' 시간 수정</h3>' +
@@ -967,7 +978,7 @@ function timeDlg(b){
     '<label class="l">리젠 주기</label><div class="r2"><input class="field" type="number" id="ih" min="0" max="99" value="' + (b.interval ? Math.floor(b.interval / 60) : "") + '"> 시간 <input class="field" type="number" id="im" min="0" max="59" value="' + (b.interval ? b.interval % 60 : "") + '"> 분</div>' +
     '<div class="err" id="tErr"></div>', "적용", function(){
       var at;
-      if (mode === "rel") at = Math.round((Date.now() + (+document.getElementById("rh").value || 0) * H + (+document.getElementById("rm").value || 0) * M + (+document.getElementById("rs").value || 0) * 1000) / 1000) * 1000;
+      if (mode === "rel") at = Math.round((nowT() + (+document.getElementById("rh").value || 0) * H + (+document.getElementById("rm").value || 0) * M + (+document.getElementById("rs").value || 0) * 1000) / 1000) * 1000;
       else {
         var dv = document.getElementById("ad").value, tv = document.getElementById("at").value;
         if (!dv || !tv) { document.getElementById("tErr").textContent = "날짜와 시각을 모두 입력하세요."; return false; }
@@ -993,7 +1004,7 @@ function guessTime(file){
   if (m && +m[2] >= 1 && +m[2] <= 12 && +m[3] >= 1 && +m[3] <= 31 && +m[4] < 24 && +m[5] < 60)
     return {t: Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)) - KST, src:"파일 이름"};
   if (file.lastModified) return {t: Math.floor(file.lastModified / 1000) * 1000, src:"파일 수정한 날짜"};
-  return {t: Math.floor(Date.now() / 1000) * 1000, src:"첨부한 시각"};
+  return {t: Math.floor(nowT() / 1000) * 1000, src:"첨부한 시각"};
 }
 function shotDlg(){
   shot = {files: [], bases: [], srcs: []};
@@ -1021,7 +1032,7 @@ function shotDlg(){
 }
 function step(html){ document.getElementById("shotStep").innerHTML = html; }
 function timeWarn(t){
-  return Date.now() - t > 6 * H ? ' <span style="color:#f08a6c">(6시간 이상 지남)</span>' : t > Date.now() + 5 * M ? ' <span style="color:#f08a6c">(미래 시각)</span>' : "";
+  return nowT() - t > 6 * H ? ' <span style="color:#f08a6c">(6시간 이상 지남)</span>' : t > nowT() + 5 * M ? ' <span style="color:#f08a6c">(미래 시각)</span>' : "";
 }
 function stepConfirm(){
   var n = shot.files.length, body;
@@ -1170,7 +1181,7 @@ function stepTable(found, msg){
   var list = document.querySelector(".res-list");
   function rowBase(tr){ var sel = tr.querySelector(".src"); return shot.bases[sel ? +sel.value : 0]; }
   function upd(){
-    var cnt = 0, now = Date.now();
+    var cnt = 0, now = nowT();
     list.querySelectorAll(".res-row").forEach(function(tr){
       var w = tr.querySelector(".when"), on = tr.querySelector(".ap").checked;
       if (on) cnt++;
@@ -1221,7 +1232,7 @@ function applyShot(){
   if (bad.length) { note.textContent = bad.join(", ") + "의 시간을 확인해 주세요."; note.style.color = "#ff6a5c"; return; }
   if (!n) { note.textContent = "저장할 보스를 하나 이상 체크해 주세요."; note.style.color = "#ff6a5c"; return; }
   if (used.length) { state.baseTime = Math.max.apply(null, used); state.baseLabel = "스크린샷"; }
-  state.updatedAt = Date.now();
+  state.updatedAt = nowT();
   closeDlg(); dirty = true; render();
   if (LIVE) save(); else { renderSaveBar(); toast(n + "마리 보스 시간을 반영했어요. (미리보기 모드라 저장되지 않아요)", "ok"); }
 }
@@ -1269,14 +1280,14 @@ function countView(){
   try {
     var inc = firebase.firestore.FieldValue.increment(1), b = firebase.firestore().batch();
     b.set(statsCol.doc("total"), { count: inc }, { merge: true });
-    b.set(statsCol.doc(dayKey(Date.now())), { count: inc }, { merge: true });
+    b.set(statsCol.doc(dayKey(nowT())), { count: inc }, { merge: true });
     b.commit().catch(function(e){ console.warn("조회수 기록 실패", e); });
   } catch (e) {}
 }
 function watchViews(on){
   if (!statsCol) return;
   if (on && !viewsUnsub) {
-    var now = Date.now(), ids = ["total", dayKey(now), dayKey(now - D)], vals = {}, subs;
+    var now = nowT(), ids = ["total", dayKey(now), dayKey(now - D)], vals = {}, subs;
     subs = ids.map(function(id){
       return statsCol.doc(id).onSnapshot(function(snap){
         vals[id] = snap.exists ? (snap.data().count || 0) : 0;
@@ -1342,7 +1353,7 @@ function onClick(e){
     if (!b.enabled) { var inp = app.querySelector('[data-note="' + b.id + '"]'); if (inp) inp.focus(); }
     return;
   }
-  if (act === "kill" && b) { b.alive = false; b.anchor = b.interval ? Math.round(Date.now() / 1000) * 1000 + b.interval * M : null; touch(); return; }
+  if (act === "kill" && b) { b.alive = false; b.anchor = b.interval ? Math.round(nowT() / 1000) * 1000 + b.interval * M : null; touch(); return; }
   if (act === "time" && b) return timeDlg(b);
   if (act === "ftime" && b) return fixedDlg(b);
   if (act === "bulkoff" || act === "bulkon") {
@@ -1367,6 +1378,7 @@ window.addEventListener("beforeunload", function(e){ if (dirty) { e.preventDefau
 
 render();
 setInterval(tick, 1000);
+syncClock(); setInterval(syncClock, 10 * M);
 })();
 </script>
 </body>
