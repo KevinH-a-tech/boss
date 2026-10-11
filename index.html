@@ -457,17 +457,68 @@ footer .contact{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,2
   @keyframes pulse{50%{opacity:.45}}
 }
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
+/* ---------- 필드 보스 통제 팝업 ---------- */
+.toast{z-index:200}
+.lock{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px));
+  background:rgba(12,4,3,.72);-webkit-backdrop-filter:blur(14px) saturate(70%);backdrop-filter:blur(14px) saturate(70%)}
+.lock[hidden]{display:none}
+.lock-box{width:min(100%,420px);border-radius:28px;overflow:hidden;text-align:center;
+  background:linear-gradient(180deg,#2a0b08,#170504);border:2px solid #ff3b30;
+  box-shadow:0 0 0 6px rgba(255,59,48,.16),0 24px 60px rgba(0,0,0,.6)}
+.lock-top{background:#ff3b30;color:#fff;padding:12px 16px;font-size:13px;font-weight:900;letter-spacing:.18em;display:flex;align-items:center;justify-content:center;gap:8px}
+.lock-body{padding:30px 22px 22px}
+.lock-ic{width:64px;height:64px;margin:0 auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,59,48,.16);border:2px solid #ff3b30}
+.lock-msg{margin:0;font-size:clamp(23px,6.4vw,30px);line-height:1.3;font-weight:900;letter-spacing:-.03em;color:#ff4d42;word-break:keep-all}
+.lock-sub{margin:12px auto 0;display:inline-block;padding:6px 16px;border-radius:999px;font-size:15px;font-weight:900;color:#fff;background:rgba(255,59,48,.25);border:1px solid rgba(255,59,48,.6)}
+.lock-warn{margin:16px 0 0;font-size:13px;color:#e8b4ae;word-break:keep-all}
+.lock-admin{margin-top:22px;background:none;border:none;color:rgba(255,200,195,.55);font-size:12px;text-decoration:underline;text-underline-offset:3px;min-height:36px;padding:0 10px}
+.lock-admin[hidden],.lock-exit[hidden]{display:none}
+.lock-exit{margin-top:22px}
+@media (prefers-reduced-motion:no-preference){
+  .lock-box{animation:lockIn .35s ease-out,lockGlow 1.8s ease-in-out .35s infinite}
+  @keyframes lockIn{from{transform:scale(.92);opacity:0}}
+  @keyframes lockGlow{50%{box-shadow:0 0 0 10px rgba(255,59,48,.08),0 24px 60px rgba(0,0,0,.6)}}
+}
+.lock-strip{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 14px;background:#b3140c;color:#fff;font-size:13px;font-weight:700;text-align:center;word-break:keep-all}
+.lock-strip[hidden]{display:none}
+.lock-card{border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;background:rgba(255,235,200,.03);border:1px solid rgba(255,235,200,.07)}
+.lock-card.on{background:linear-gradient(180deg,rgba(255,59,48,.14),rgba(255,59,48,.05));border-color:rgba(255,59,48,.45)}
+.lock-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.lock-title{font-weight:900;font-size:14.5px;color:#ece3d2}
+.lock-state{font-size:12.5px;color:#9f9584;margin-top:2px}
+.lock-card.on .lock-state{color:#ff8a80;font-weight:700}
+.lock-card .lbl-s{font-size:12px;color:#9f9584;display:block;margin-bottom:4px}
+.lock-card .field{width:100%}
+.lock-card .sw[aria-checked="true"]{border-color:rgba(255,59,48,.6);color:#ff8a80}
+.lock-card .sw[aria-checked="true"] .knob{background:#ff3b30}
+.lock-card .sw[aria-checked="true"] .knob::after{background:#fff}
+.lock-card .hint{margin:0;font-size:12px;color:#9f9584}
 </style>
 </head>
 <body>
 <div class="bgfx" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="lock-strip" id="lockStrip" hidden><span aria-hidden="true">⛔</span><span style="min-width:0">통제 팝업 켜짐 · 길드원 화면 가려진 상태</span></div>
 <div id="app"></div>
-<script type="application/json" id="boss-state">{"baseTime":1791466260000,"baseLabel":"스크린샷","updatedAt":1791468812516,"bosses":[{"id":"arachne","name":"아라크네","lv":50,"region":"thessalia","loc":"테살리아","type":"fixed","days":[3],"hours":[21],"enabled":true,"note":""},{"id":"chrysophagos","name":"크리소파고스","lv":35,"region":"thessalia","loc":"테살리아 평원","type":"respawn","interval":480,"anchor":1791474000000,"enabled":true,"note":""},{"id":"amorphos","name":"아모르포스","lv":35,"region":"thessalia","loc":"침식된 경작지","type":"respawn","interval":480,"anchor":1791474180000,"enabled":true,"note":""},{"id":"thrason","name":"트라손","lv":40,"region":"thessalia","loc":"고대 신전 유적지","type":"respawn","interval":480,"anchor":1791474300000,"enabled":true,"note":""},{"id":"iokanthos","name":"이오칸토스","lv":45,"region":"thessalia","loc":"아르보리아스 폐허","type":"respawn","interval":720,"anchor":1791470820000,"enabled":true,"note":""},{"id":"kini","name":"키니 러우리","lv":45,"region":"thessalia","loc":"금지된 숲","type":"respawn","interval":720,"anchor":1791471120000,"enabled":true,"note":""},{"id":"argos","name":"아르고스","lv":65,"region":"zahab","loc":"자하브","type":"fixed","days":[1],"hours":[21],"enabled":false,"note":"처치 불가"},{"id":"alastor","name":"알라스토르","lv":55,"region":"zahab","loc":"무법자의 길목","type":"respawn","interval":480,"anchor":1791485880000,"enabled":true,"note":""},{"id":"bedix","name":"베딕스","lv":60,"region":"zahab","loc":"공헌의 제단","type":"respawn","interval":480,"anchor":1791472440000,"enabled":true,"note":""},{"id":"gotsis","name":"고트시스","lv":60,"region":"zahab","loc":"황금 리라 부락","type":"respawn","interval":480,"anchor":1791472680000,"enabled":true,"note":""},{"id":"tripok","name":"트리포크","lv":65,"region":"zahab","loc":"가시 덩굴 지대","type":"respawn","interval":720,"anchor":1791482280000,"enabled":false,"note":"처치 불가"},{"id":"giant","name":"거인의 세번째 손","lv":70,"region":"zahab","loc":"유적지 폐허","type":"respawn","interval":720,"anchor":1791466260000,"alive":true,"enabled":false,"note":"처치 불가"},{"id":"medeia","name":"메데이아","lv":45,"region":"tartaros","loc":"[인터] 타르타로스 2계","type":"fixed","days":[2],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"chimera","name":"키메라","lv":60,"region":"tartaros","loc":"[인터] 타르타로스 4계","type":"fixed","days":[6],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"cerberus","name":"케르베로스","lv":75,"region":"tartaros","loc":"[인터] 타르타로스 5계","type":"fixed","days":[5],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"s_amorphos","name":"봉인된 아모르포스","lv":40,"region":"tartaros","loc":"[인터] 타르타로스 1계 · 유폐의 둥지","type":"respawn","interval":480,"anchor":1791475380000,"enabled":false,"note":"통제로 인해 불가"},{"id":"bdeles","name":"봉인된 브델레스","lv":45,"region":"tartaros","loc":"타르타로스 2계 · 배신의 심연굴","type":"respawn","interval":null,"anchor":1791514560000,"enabled":false,"note":"통제로 인해 불가"},{"id":"abyss","name":"심연의 틈","lv":null,"region":"invasion","loc":"테살리아 / 자하브","type":"fixed","days":[0,1,2,3,4,5,6],"hours":[0,12,18],"enabled":true,"note":"","info":"하루 1회 참여 · 참여 보상 매일 5시 초기화"},{"id":"scoto_v","name":"선봉의 스코톨라스마","lv":40,"region":"invasion","loc":"침공","type":"fixed","days":[1,4],"hours":[21],"startAt":1791903600000,"enabled":false,"note":"10/14 업데이트 예정"},{"id":"scoto_f","name":"함락의 스코톨라스마","lv":40,"region":"invasion","loc":"침공","type":"fixed","days":[1,4],"hours":[21],"startAt":1791903600000,"enabled":false,"note":"10/14 업데이트 예정"}]}</script>
+<div class="lock" id="lock" role="alertdialog" aria-modal="true" aria-labelledby="lockMsg" aria-describedby="lockSub">
+  <div class="lock-box">
+    <div class="lock-top"><span aria-hidden="true">⚠</span> 진입 금지</div>
+    <div class="lock-body">
+      <div class="lock-ic" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff4d42" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M5.3 5.3l13.4 13.4"/></svg></div>
+      <p class="lock-msg" id="lockMsg">모든 필드 보스 통제 중</p>
+      <div class="lock-sub" id="lockSub">별도 공지 시까지</div>
+      <p class="lock-warn">통제가 풀릴 때까지 필드 보스에 절대 들어가지 마세요.</p>
+      <button type="button" class="lock-admin" id="lockAdmin">관리자 로그인</button>
+      <button type="button" class="btn lock-exit" id="lockExit" hidden>미리보기 닫기</button>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="boss-state">{"lockdown":{"on":true,"main":"모든 필드 보스 통제 중","sub":"별도 공지 시까지"},"baseTime":1791466260000,"baseLabel":"스크린샷","updatedAt":1791468812516,"bosses":[{"id":"arachne","name":"아라크네","lv":50,"region":"thessalia","loc":"테살리아","type":"fixed","days":[3],"hours":[21],"enabled":true,"note":""},{"id":"chrysophagos","name":"크리소파고스","lv":35,"region":"thessalia","loc":"테살리아 평원","type":"respawn","interval":480,"anchor":1791474000000,"enabled":true,"note":""},{"id":"amorphos","name":"아모르포스","lv":35,"region":"thessalia","loc":"침식된 경작지","type":"respawn","interval":480,"anchor":1791474180000,"enabled":true,"note":""},{"id":"thrason","name":"트라손","lv":40,"region":"thessalia","loc":"고대 신전 유적지","type":"respawn","interval":480,"anchor":1791474300000,"enabled":true,"note":""},{"id":"iokanthos","name":"이오칸토스","lv":45,"region":"thessalia","loc":"아르보리아스 폐허","type":"respawn","interval":720,"anchor":1791470820000,"enabled":true,"note":""},{"id":"kini","name":"키니 러우리","lv":45,"region":"thessalia","loc":"금지된 숲","type":"respawn","interval":720,"anchor":1791471120000,"enabled":true,"note":""},{"id":"argos","name":"아르고스","lv":65,"region":"zahab","loc":"자하브","type":"fixed","days":[1],"hours":[21],"enabled":false,"note":"처치 불가"},{"id":"alastor","name":"알라스토르","lv":55,"region":"zahab","loc":"무법자의 길목","type":"respawn","interval":480,"anchor":1791485880000,"enabled":true,"note":""},{"id":"bedix","name":"베딕스","lv":60,"region":"zahab","loc":"공헌의 제단","type":"respawn","interval":480,"anchor":1791472440000,"enabled":true,"note":""},{"id":"gotsis","name":"고트시스","lv":60,"region":"zahab","loc":"황금 리라 부락","type":"respawn","interval":480,"anchor":1791472680000,"enabled":true,"note":""},{"id":"tripok","name":"트리포크","lv":65,"region":"zahab","loc":"가시 덩굴 지대","type":"respawn","interval":720,"anchor":1791482280000,"enabled":false,"note":"처치 불가"},{"id":"giant","name":"거인의 세번째 손","lv":70,"region":"zahab","loc":"유적지 폐허","type":"respawn","interval":720,"anchor":1791466260000,"alive":true,"enabled":false,"note":"처치 불가"},{"id":"medeia","name":"메데이아","lv":45,"region":"tartaros","loc":"[인터] 타르타로스 2계","type":"fixed","days":[2],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"chimera","name":"키메라","lv":60,"region":"tartaros","loc":"[인터] 타르타로스 4계","type":"fixed","days":[6],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"cerberus","name":"케르베로스","lv":75,"region":"tartaros","loc":"[인터] 타르타로스 5계","type":"fixed","days":[5],"hours":[21],"enabled":false,"note":"통제로 인해 불가"},{"id":"s_amorphos","name":"봉인된 아모르포스","lv":40,"region":"tartaros","loc":"[인터] 타르타로스 1계 · 유폐의 둥지","type":"respawn","interval":480,"anchor":1791475380000,"enabled":false,"note":"통제로 인해 불가"},{"id":"bdeles","name":"봉인된 브델레스","lv":45,"region":"tartaros","loc":"타르타로스 2계 · 배신의 심연굴","type":"respawn","interval":null,"anchor":1791514560000,"enabled":false,"note":"통제로 인해 불가"},{"id":"abyss","name":"심연의 틈","lv":null,"region":"invasion","loc":"테살리아 / 자하브","type":"fixed","days":[0,1,2,3,4,5,6],"hours":[0,12,18],"enabled":true,"note":"","info":"하루 1회 참여 · 참여 보상 매일 5시 초기화"},{"id":"scoto_v","name":"선봉의 스코톨라스마","lv":40,"region":"invasion","loc":"침공","type":"fixed","days":[1,4],"hours":[21],"startAt":1791903600000,"enabled":false,"note":"10/14 업데이트 예정"},{"id":"scoto_f","name":"함락의 스코톨라스마","lv":40,"region":"invasion","loc":"침공","type":"fixed","days":[1,4],"hours":[21],"startAt":1791903600000,"enabled":false,"note":"10/14 업데이트 예정"}]}</script>
 <script id="app-script">
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-11 12:00"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-12 12:00"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 /* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
@@ -490,7 +541,10 @@ var IC_CAL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke
 var IC_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
 
 var state = JSON.parse(document.getElementById("boss-state").textContent);
+var LOCK_MAIN = "모든 필드 보스 통제 중", LOCK_SUB = "별도 공지 시까지";
 function migrate(st){
+  // 통제 설정이 아직 저장된 적 없으면 기본은 "켜짐" (관리자가 해제해야 꺼짐)
+  if (!st.lockdown || typeof st.lockdown.on !== "boolean") st.lockdown = { on: true, main: LOCK_MAIN, sub: LOCK_SUB };
   (st.bosses || []).forEach(function(b){
     if (b.id === "bdeles" && !b.interval) b.interval = 1440; // 봉인된 브델레스: 리젠 1일
   });
@@ -498,7 +552,7 @@ function migrate(st){
 }
 migrate(state);
 var saved = JSON.stringify(state);
-var dirty = false, tab = "all", admin = false;
+var dirty = false, tab = "all", admin = false, lockPreview = false;
 var sampleNs = null, canWrite = true, saveMsg = "", installEvt = null;
 var CFG = window.BOSS_CONFIG || {}, LIVE = false, auth = null, docRef = null, conn = "preview", loginPending = false;
 var statsCol = null, views = null, viewsUnsub = null;
@@ -770,6 +824,14 @@ function render(){
     if (LIVE) h += '<div class="views"><span class="vk">조회수</span><div id="viewStats">' + viewsHtml() + '</div></div>';
     h += '<div class="ver" id="verBox">' + verHtml() + '</div>';
     setTimeout(checkBuild, 0);
+    var L = state.lockdown, SL = savedLock();
+    h += '<div class="lock-card' + (L.on ? ' on' : '') + '"><div class="lock-head"><div><div class="lock-title">필드 보스 통제 팝업</div>';
+    h += '<div class="lock-state">' + (SL.on ? '현재 길드원 화면: 팝업 표시 중' : '현재 길드원 화면: 팝업 없음') + (L.on !== SL.on || L.main !== SL.main || L.sub !== SL.sub ? ' · 저장 안 된 변경 있음' : '') + '</div></div>';
+    h += '<button class="sw" role="switch" aria-checked="' + L.on + '" data-act="locktoggle"><span class="knob"></span>' + (L.on ? '켜짐' : '꺼짐') + '</button></div>';
+    h += '<div><label class="lbl-s" for="lockMain">팝업 큰 문구</label><input class="field" id="lockMain" data-lock="main" maxlength="40" value="' + esc(L.main) + '"></div>';
+    h += '<div><label class="lbl-s" for="lockSubIn">팝업 작은 문구</label><input class="field" id="lockSubIn" data-lock="sub" maxlength="30" value="' + esc(L.sub) + '"></div>';
+    h += '<div class="line"><button class="btn primary" data-act="save">변경사항 저장</button><button class="btn" data-act="lockpreview">길드원 화면 미리보기</button></div>';
+    h += '<p class="hint">스위치를 켜거나 끈 뒤 <b>변경사항 저장</b>을 누르면 모든 길드원 화면에 바로 반영됩니다. 관리자 화면은 가려지지 않아요.</p></div>';
     h += '<div class="line"><button class="btn primary big" data-act="shot">스크린샷 첨부해서 시간 갱신</button>' + '</div>';
     h += '<div class="line"><select class="field" id="bulkRegion" aria-label="지역">' + REGIONS.slice(1).map(function(r){ return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join("") + '</select>';
     h += '<input class="field" type="text" id="bulkNote" maxlength="60" placeholder="지역 안내 문구" style="flex:1;min-width:150px" aria-label="지역 안내 문구">';
@@ -808,7 +870,36 @@ function render(){
   app.innerHTML = h;
   if (keep && admin) { document.getElementById("bulkRegion").value = keep.r; document.getElementById("bulkNote").value = keep.n; }
   renderSaveBar();
+  renderLock();
 }
+
+/* ---------- 필드 보스 통제 팝업 ---------- */
+var lockEl = document.getElementById("lock"), lockStrip = document.getElementById("lockStrip");
+function savedLock(){
+  try { var s = migrate(JSON.parse(saved)).lockdown; if (s) return s; } catch (e) {}
+  return { on: true, main: LOCK_MAIN, sub: LOCK_SUB };
+}
+function renderLock(){
+  // 길드원: 저장된 설정 기준 / 관리자: 미리보기일 때만 (저장 전 문구로)
+  var L = admin ? state.lockdown : savedLock();
+  var show = admin ? lockPreview : L.on;
+  if (!admin) lockPreview = false;
+  var m = document.getElementById("lockMsg"), s = document.getElementById("lockSub");
+  var mt = (L.main || "").trim() || LOCK_MAIN, st = (L.sub || "").trim() || LOCK_SUB;
+  if (m.textContent !== mt) m.textContent = mt;
+  if (s.textContent !== st) s.textContent = st;
+  if (lockEl.hidden === show) lockEl.hidden = !show;
+  document.getElementById("lockAdmin").hidden = admin;
+  document.getElementById("lockExit").hidden = !(admin && lockPreview);
+  if ("inert" in app) app.inert = show;
+  app.setAttribute("aria-hidden", show ? "true" : "false");
+  bar.style.visibility = show ? "hidden" : "";
+  lockStrip.hidden = !(admin && savedLock().on);
+}
+lockEl.addEventListener("click", function(e){
+  if (e.target.closest("#lockAdmin")) return loginDlg();
+  if (e.target.closest("#lockExit")) { lockPreview = false; renderLock(); }
+});
 
 function editing(){
   var a = document.activeElement;
@@ -1262,7 +1353,7 @@ function save(){
   saveMsg = "저장 중…"; renderSaveBar();
   var json = JSON.stringify(state);
   docRef.set({ json: json, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }).then(function(){
-    saved = json; dirty = false; saveMsg = ""; renderSaveBar();
+    saved = json; dirty = false; saveMsg = ""; render();
     toast("저장했습니다. 길드원 화면에 반영됩니다.", "ok");
   }).catch(function(err){
     var c = err && err.code;
@@ -1342,11 +1433,18 @@ function onClick(e){
     return installGuide();
   }
   if (act === "logout") {
+    lockPreview = false;
     if (LIVE) { auth.signOut().then(function(){ toast("게스트 모드로 전환했습니다.", "ok"); }); return; }
     admin = false; try { sessionStorage.removeItem("boss-admin"); } catch (er) {} render(); toast("게스트 모드로 전환했습니다.", "ok"); return;
   }
   if (!admin) return;
   if (act === "shot") return shotDlg();
+  if (act === "locktoggle") {
+    state.lockdown.on = !state.lockdown.on; touch();
+    toast(state.lockdown.on ? "통제 팝업을 켰습니다. 저장해야 반영돼요." : "통제 팝업을 껐습니다. 저장해야 반영돼요.", "ok");
+    return;
+  }
+  if (act === "lockpreview") { lockPreview = true; renderLock(); return; }
   if (act === "toggle" && b) {
     b.enabled = !b.enabled; touch();
     toast(b.name + (b.enabled ? " 알림을 켰습니다." : " 알림을 껐습니다. 안내 문구를 입력해 주세요."), "ok");
@@ -1369,6 +1467,8 @@ window.addEventListener("beforeinstallprompt", function(e){ e.preventDefault(); 
 window.addEventListener("appinstalled", function(){ installEvt = null; render(); toast("홈 화면에 추가했어요.", "ok"); });
 bar.addEventListener("click", onClick);
 app.addEventListener("input", function(e){
+  var lk = e.target.getAttribute && e.target.getAttribute("data-lock");
+  if (lk && admin) { state.lockdown[lk] = e.target.value; touch(false); return; }
   var id = e.target.getAttribute && e.target.getAttribute("data-note");
   if (!id) return;
   var b = find(id); if (!b) return;
