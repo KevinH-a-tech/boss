@@ -632,6 +632,183 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 .g-evadm .g-del{min-height:34px;padding:0 9px}
 .g-none{margin:0;padding:8px 0 12px;font-size:13.5px;color:var(--faint)}
 @media (max-width:420px){.g-ev{flex-wrap:wrap}.g-evadm{width:100%;justify-content:flex-end}}
+/* ================= 일정 (한 주) · 레이드 분배 안내 · 고정 공지 ================= */
+.g-raidlink{display:inline-flex;align-items:center;gap:4px;margin-top:4px;font-size:12.5px;font-weight:700;color:var(--gold-hi);text-decoration:none;min-height:28px}
+.g-raidlink:hover{text-decoration:underline;text-underline-offset:3px}
+/* 주제(챕터) 구분 */
+.chap{display:flex;flex-direction:column;gap:12px;scroll-margin-top:16px}
+.chap + .chap{margin-top:30px;padding-top:30px;border-top:2px solid rgba(255,235,200,.1);position:relative}
+.chap + .chap::before{content:"";position:absolute;top:-2px;left:0;width:64px;height:2px;background:var(--gold)}
+.chap-h{display:flex;align-items:center;gap:12px;padding:0 2px}
+.chap-h .ic{flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#1d1408;background:linear-gradient(180deg,#ecc276,#d4a252)}
+.chap-h .tx{flex:1;min-width:0}
+.chap-h .k{font-size:11.5px;font-weight:900;letter-spacing:.1em;color:var(--gold)}
+.chap-h h2{margin:1px 0 0;font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--cream);line-height:1.25}
+.chap-h .sub{font-size:13px;color:var(--muted);margin-top:2px}
+.chap-h .sub b{color:var(--cream2)}
+.chap-tools{display:flex;justify-content:flex-end}
+
+.r-price{border-radius:24px;padding:18px;border:1px solid rgba(227,178,94,.35);background:radial-gradient(380px 180px at 100% 0,rgba(227,178,94,.13),transparent 70%),linear-gradient(170deg,#262016,#16130f)}
+.r-price .lb{font-size:12.5px;font-weight:700;color:var(--muted)}
+.r-price .big{margin:2px 0 0;font-size:26px;font-weight:900;color:var(--cream);letter-spacing:-.02em}
+.r-price .big em{font-style:normal;color:var(--gold-hi)}
+.r-calc{margin-top:14px;display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:18px;background:rgba(0,0,0,.25);border:1px solid var(--line)}
+.r-calc label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.r-calc .in{display:flex;align-items:center;gap:6px}
+.r-calc input{width:100%;font-family:var(--num);font-size:20px;font-weight:800;padding:8px 10px;text-align:right}
+.r-calc .unit{font-size:12.5px;color:var(--muted);flex:none}
+.r-calc .ar{display:none}
+.r-calc .out{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:6px;border-top:1px dashed rgba(255,235,200,.1)}
+.r-calc .out label{margin:0}
+.r-calc .out .v{font-family:var(--num);font-size:24px;font-weight:800;color:var(--gold-hi);line-height:1.2;padding:8px 0}
+.r-calc .out .v small{font-family:var(--sans);font-size:12.5px;color:var(--muted);font-weight:700;margin-left:4px}
+.r-quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.r-quick button{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:12.5px;font-weight:700}
+
+.r-steps{list-style:none;margin:0;padding:6px 16px;border-radius:24px;counter-reset:st}
+.r-steps li{display:flex;gap:14px;padding:12px 0;position:relative}
+.r-steps li + li{border-top:1px solid var(--line)}
+.r-steps .n{flex:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--num);font-weight:800;font-size:15px;color:#1d1408;background:var(--gold)}
+.r-steps b{display:block;font-size:15px;color:var(--cream)}
+.r-steps span{font-size:13px;color:var(--muted);word-break:keep-all}
+.r-steps .tag{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:700;color:#ffb39f;background:rgba(240,138,108,.12);border:1px solid rgba(240,138,108,.35);border-radius:999px;padding:1px 8px}
+
+/* 핵심 경고 */
+.r-warn{display:flex;gap:14px;align-items:flex-start;padding:18px;border-radius:22px;background:linear-gradient(170deg,#3a1511,#22100d);border:2px solid #ff6b4a;box-shadow:0 0 0 4px rgba(255,107,74,.12)}
+.r-warn .wi{flex:none;width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:#ff6b4a;color:#1f0a06}
+.r-warn .wlab{font-size:11.5px;font-weight:900;letter-spacing:.08em;color:#ff9b85}
+.r-warn .wt{margin:2px 0 0;font-size:19px;font-weight:900;line-height:1.35;color:#fff1ec;word-break:keep-all}
+.r-warn .wt em{font-style:normal;color:#ff9b85}
+.r-warn .ws{margin:6px 0 0;font-size:13.5px;color:#f1c7bd;word-break:keep-all}
+.r-warn .ws b{color:#fff1ec}
+/* 일정 속 경고 */
+.ev-warn{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:4px 10px;border-radius:10px;font-size:12.5px;font-weight:700;color:#ffd2c8;background:rgba(255,107,74,.14);border:1px solid rgba(255,107,74,.5);word-break:keep-all}
+/* 진행 순서 2단계 강조 */
+.r-steps li.warn{margin:4px -10px;padding:12px 10px;border-radius:16px;background:rgba(255,107,74,.09);box-shadow:inset 0 0 0 1px rgba(255,107,74,.45)}
+.r-steps li.warn + li{border-top-color:transparent}
+.r-steps li.warn .n{background:#ff6b4a;color:#1f0a06}
+.r-steps li.warn .tag{font-size:12.5px;padding:4px 10px;border-radius:10px;line-height:1.45;color:#fff1ec;background:#a8321f;border-color:#ff6b4a}
+/* 선택 비교 */
+.r-choice{border-radius:24px;padding:16px}
+.r-choice .sub{margin:-6px 0 12px;font-size:13px;color:var(--muted)}
+.r-opts{position:relative}
+.r-or{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:900;color:var(--muted);background:#15130f;border:1px solid rgba(255,235,200,.14);pointer-events:none}
+.r-res .r-cmp{list-style:none;margin:0;padding:0}
+.r-cmp li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed rgba(255,235,200,.1);font-size:14px;color:#d9cfbd;word-break:keep-all}
+.r-cmp li:first-child{border-top:none;padding-top:2px}
+.r-cmp .k2{flex:none;width:78px;font-size:12.5px;color:var(--muted);font-weight:700}
+.r-cmp .ox{flex:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900}
+.r-cmp .ox.o{background:rgba(127,200,150,.18);color:#9fdcb2;border:1px solid rgba(127,200,150,.5)}
+.r-cmp .ox.x{background:#ff6b4a;color:#1f0a06}
+.r-cmp li.hot{font-weight:900;color:#fff1ec}
+.r-choice h3{margin:0 0 10px;font-size:16px;font-weight:900;color:var(--cream)}
+.r-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.r-opt{min-height:64px;border-radius:16px;border:1px solid var(--line);background:rgba(255,235,200,.03);color:var(--muted);font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px}
+.r-opt small{font-size:11.5px;font-weight:500;color:var(--faint)}
+.r-opt[aria-pressed="true"].buy{border-color:rgba(240,138,108,.7);background:rgba(240,138,108,.12);color:#ffcdbf}
+.r-opt[aria-pressed="true"].dia{border-color:rgba(227,178,94,.7);background:rgba(227,178,94,.12);color:var(--gold-hi)}
+.r-res{margin-top:10px;border-radius:16px;padding:14px 16px;font-size:14px;line-height:1.6}
+.r-res.buy{background:#241512;border:1px solid rgba(240,138,108,.4)}
+.r-res.dia{background:#241e12;border:1px solid rgba(227,178,94,.4)}
+.r-res .t{font-size:16px;font-weight:900;margin-bottom:8px}
+.r-res.buy .t{color:#ffb39f}
+.r-res.dia .t{color:var(--gold-hi)}
+.r-res ul{margin:0;padding-left:18px;color:#d9cfbd;word-break:keep-all}
+.r-res li + li{margin-top:2px}
+
+.r-faq{border-radius:22px;padding:4px 6px}
+.r-faq h3{margin:10px 10px 2px;font-size:12.5px;color:var(--muted);font-weight:700}
+.r-q{border-top:1px solid var(--line)}
+.r-faq h3 + .r-q{border-top:none}
+.r-q-h{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 10px;border:none;background:transparent;text-align:left;color:var(--cream);font-weight:700}
+.r-q-h .q{flex:none;font-family:var(--num);color:var(--gold);font-weight:800}
+.r-q-h .tt{flex:1;min-width:0;word-break:keep-all}
+.r-q-h .cv{flex:none;color:var(--faint)}
+@media (prefers-reduced-motion:no-preference){.r-q-h .cv{transition:transform .2s}}
+.r-q-h[aria-expanded="true"] .cv{transform:rotate(90deg)}
+.r-q-b{padding:0 10px 12px 34px;font-size:14px;color:#d9cfbd}
+.r-q-b b{color:var(--cream)}
+
+
+/* ===== 한 주 전체 (요일 구분 강화) ===== */
+.g-wk{border-radius:24px;padding:4px 14px}
+.wk-day{display:grid;grid-template-columns:56px minmax(0,1fr);gap:14px;padding:14px 0;border-top:1px solid rgba(255,235,200,.1)}
+.wk-day:first-child{border-top:none}
+.wk-day.today{margin:0 -14px;padding:14px;background:rgba(227,178,94,.07);border-top-color:transparent;border-radius:18px;box-shadow:inset 0 0 0 1px rgba(227,178,94,.35)}
+.wk-day.today + .wk-day{border-top-color:transparent}
+.wk-badge{display:flex;flex-direction:column;align-items:center;gap:3px;align-self:start}
+.wk-badge b{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:900;color:var(--cream);background:rgba(255,235,200,.06);border:1px solid rgba(255,235,200,.1)}
+.wk-badge small{font-family:var(--num);font-size:11.5px;font-weight:700;color:var(--faint)}
+.wk-day.sat .wk-badge b{color:#9cc4ef}
+.wk-day.sun .wk-badge b{color:#f3a08c}
+.wk-day.today .wk-badge b{background:linear-gradient(180deg,#ecc276,#d4a252);color:#1d1408;border-color:transparent}
+.wk-day.today .wk-badge small{color:var(--gold-hi)}
+.wk-body{min-width:0;display:flex;flex-direction:column}
+.wk-ev{padding:10px 0;border-top:1px dashed rgba(255,235,200,.09)}
+.wk-ev:first-child{border-top:none;padding-top:2px}
+.wk-ev .mt{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wk-ev .tm{font-family:var(--num);font-size:16px;font-weight:800;color:var(--gold-hi)}
+.wk-ev .nm{margin-top:2px;font-size:15.5px;font-weight:700;color:var(--cream);word-break:keep-all}
+.wk-ev .ds{font-size:13px;color:var(--muted);word-break:keep-all;margin-top:1px}
+.wk-ev .adm{display:flex;gap:4px;margin-left:auto}
+.wk-ev .adm .g-del{min-height:32px;padding:0 9px}
+.wk-empty{font-size:13.5px;color:var(--faint);min-height:40px;display:flex;align-items:center}
+.wk-day.is-empty{padding:10px 0}
+.wk-day.is-empty .wk-badge b{width:40px;height:40px;font-size:17px;opacity:.75}
+.wk-day.is-empty .wk-empty{min-height:40px}
+
+/* ===== 가격 케이스 ===== */
+.r-case{border-radius:18px;padding:14px;background:rgba(0,0,0,.22);border:1px solid var(--line);margin-top:12px}
+.r-case .ch{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.r-case .ab{flex:none;width:24px;height:24px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--num);font-weight:800;font-size:13px;color:#1d1408;background:var(--gold)}
+.r-case.b .ab{background:#9cc4ef}
+.r-case .ct{font-weight:900;font-size:15px;color:var(--cream)}
+.r-case .cd{font-size:13.5px;color:#d9cfbd;word-break:keep-all}
+.r-case .cd b{color:var(--cream)}
+.r-case .r-calc{margin-top:10px;background:transparent;border:none;padding:0}
+
+/* ===== 공지 (고정 공지) ===== */
+.n-pins{display:flex;flex-direction:column;gap:8px}
+.n-pins h3{margin:0 4px;font-size:12.5px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px}
+.n-pin{border-radius:20px;border:1px solid rgba(156,196,239,.35);background:linear-gradient(170deg,#18202a,#14161a)}
+.n-pin-h{display:flex;align-items:flex-start;gap:10px;width:100%;padding:14px 16px;border:none;background:transparent;text-align:left;color:var(--cream)}
+.n-pin-h .pi{flex:none;margin-top:2px;color:#9cc4ef}
+.n-pin-h .tx{flex:1;min-width:0}
+.n-pin-h .tt{display:block;font-weight:900;font-size:15.5px;word-break:keep-all}
+.n-pin-h .pv{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:3px;font-size:13px;color:#b8c2cc;white-space:pre-wrap}
+.n-pin-h .cv{flex:none;color:var(--faint);margin-top:2px}
+@media (prefers-reduced-motion:no-preference){.n-pin-h .cv{transition:transform .2s}}
+.n-pin-h[aria-expanded="true"] .cv{transform:rotate(90deg)}
+.n-pin-h[aria-expanded="true"] .pv{display:none}
+.n-pin-b{padding:0 16px 12px 42px}
+.n-pin-b .g-body{margin:0;font-size:14.5px}
+.g-body a{color:var(--gold-hi);text-underline-offset:3px;word-break:break-all}
+.g-pinbtn{min-height:38px;padding:0 12px;border-radius:12px;border:1px solid rgba(156,196,239,.4);background:transparent;color:#9cc4ef;font-size:12.5px;font-weight:700}
+.g-pinbtn[aria-pressed="true"]{background:rgba(156,196,239,.12)}
+.g-foot .g-pinbtn{margin-left:auto}
+.g-foot .g-pinbtn + .g-del{margin-left:0}
+
+.r-calc .out .ol{font-size:12px;color:var(--muted);font-weight:700}
+.r-steps{background:rgba(255,235,200,.03);border:1px solid var(--line)}
+.r-steps .hl{display:inline;font-size:inherit;color:var(--cream)}
+.wk-ev.off{opacity:.5}
+.r-choice,.r-faq{background:rgba(255,235,200,.03);border:1px solid var(--line)}
+.chap-tools{align-items:center;gap:8px;flex-wrap:wrap}
+.chap-tools .g-chk{margin-right:auto}
+.n-pins .pi{color:#9cc4ef;display:inline-flex}
+.n-guide{border-radius:22px;border:1px solid rgba(227,178,94,.5);background:radial-gradient(380px 160px at 100% 0,rgba(227,178,94,.12),transparent 70%),linear-gradient(170deg,#262016,#15130f);scroll-margin-top:16px}
+.n-guide .n-pin-h .pi{color:var(--gold)}
+.n-guide .lab{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:900;color:#1d1408;background:var(--gold);vertical-align:2px}
+.n-guide .tt{display:inline}
+.n-guide .pv{color:#f1c7bd}
+.n-guide-b{display:flex;flex-direction:column;gap:12px;padding:0 12px 14px}
+.g-raidcard{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:20px;text-decoration:none;color:var(--cream);border:1px solid rgba(227,178,94,.4);background:linear-gradient(170deg,#241e15,#16130f);min-height:64px}
+.g-raidcard .ic{flex:none;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#1d1408;background:linear-gradient(180deg,#ecc276,#d4a252)}
+.g-raidcard .tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.g-raidcard b{font-size:15.5px}
+.g-raidcard small{font-size:12.5px;color:var(--muted)}
+.g-raidcard .ar{color:var(--gold-hi);font-weight:900}
+
 </style>
 </head>
 <body>
@@ -662,7 +839,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-13 22:00"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-14 02:00"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 /* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
@@ -1639,7 +1816,7 @@ var G_IC_MORE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentCo
 var G_IC_HEART = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5z"/></svg>';
 var G_IC_URL = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" style="flex:none"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>';
 
-var gEntry = (function(){ var x = (location.hash || "").replace("#", ""); return V_ORDER[x] ? x : "boss"; })();
+var gEntry = (function(){ var x = (location.hash || "").replace("#", ""); if (x === "raid") return "notice"; return V_ORDER[x] ? x : "boss"; })();
 var gView = gEntry, gMenuOpen = false;
 var gTop = document.getElementById("gTop"), gNav = document.getElementById("gNav");
 var gViewEl = { notice: document.getElementById("vNotice"), schedule: document.getElementById("vSched"), tips: document.getElementById("vTips") };
@@ -1668,7 +1845,8 @@ function gRows(snap){
     var x = d.data({ serverTimestamps: "estimate" }) || {}, ts = x.createdAt;
     return { id: d.id, title: String(x.title || ""), body: String(x.body || ""), author: String(x.author || ""),
       links: Array.isArray(x.links) ? x.links.filter(gSafeUrl).slice(0, 3) : [],
-      likes: Math.max(0, +x.likes || 0), at: ts && ts.toMillis ? ts.toMillis() : nowT() };
+      likes: Math.max(0, +x.likes || 0), at: ts && ts.toMillis ? ts.toMillis() : nowT(),
+      pinned: x.pinned === true, pinAt: x.pinAt && x.pinAt.toMillis ? x.pinAt.toMillis() : 0 };
   });
 }
 function gOkEvent(e){ return e && typeof e.title === "string" && /^\d{2}:\d{2}$/.test(e.time) && Array.isArray(e.days); }
@@ -1756,7 +1934,7 @@ gNav.addEventListener("click", function(e){ var b = e.target.closest("[data-view
 
 /* ---------- 각 메뉴 화면 ---------- */
 var gForms = { notice: null, tips: null, schedule: null };
-var gOpenOld = {}, gTipSort = "new", gSDay = gTodayMon(), gSWeek = false, gShowBoss = true, gIntroEdit = null;
+var gOpenOld = {}, gTipSort = "new", gShowBoss = false, gIntroEdit = null;
 
 function gRenderView(listOnly){
   var el = gViewEl[gView]; if (!el) return;
@@ -1792,6 +1970,16 @@ function gActs(kind, okLabel, busy){
 }
 
 /* 공지 */
+var G_IC_PIN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15 3l6 6-3 1-4 4 1 5-2 1-4-4-5 5-1-1 5-5-4-4 1-2 5 1 4-4z"/></svg>';
+function gLinkify(t){
+  return esc(t).replace(/https?:\/\/[^\s<]+/g, function(u){
+    if (/#raid$/.test(u)) return '<a href="#raid" data-g="raid">분배 방식 자세히 보기 ↗</a>';
+    return '<a href="' + u + '" target="_blank" rel="noopener noreferrer nofollow">' + u.replace(/^https?:\/\//i, "") + '</a>';
+  });
+}
+function gNoticeFoot(p){
+  return '<div class="g-foot">' + gLikeBtn("n", p) + (admin ? '<button class="g-pinbtn" data-g="pin" data-id="' + esc(p.id) + '" aria-pressed="' + !!p.pinned + '">' + (p.pinned ? '고정 해제' : '📌 고정하기') + '</button>' + gDelBtn("n", p.id) : '') + '</div>';
+}
 function gNoticeHead(){ return admin && !gForms.notice ? '<div class="g-bar"><span></span><button class="btn primary" data-g="write" data-k="notice">+ 공지 작성</button></div>' : ''; }
 function gNoticeForm(){
   var d = gForms.notice; if (!d) return '';
@@ -1799,20 +1987,35 @@ function gNoticeForm(){
     gField("notice", "title", "제목", true, "input", 'maxlength="60"', d.title, d.errs.title) +
     gField("notice", "body", "내용", true, "textarea", 'maxlength="3000" rows="6"', d.body, d.errs.body) +
     gField("notice", "author", "작성자", true, "input", 'maxlength="20" autocomplete="nickname"', d.author, d.errs.author) +
-    '<p class="g-hint">공지 시각은 <b>공지하기를 누른 순간</b>으로 초 단위까지 기록돼요.</p>' + gActs("notice", "공지하기", d.busy) + '</section>';
+    '<p class="g-hint">공지 시각은 <b>공지하기를 누른 순간</b>으로 초 단위까지 기록돼요. 내용에 주소(https://…)를 쓰면 자동으로 링크가 돼요.</p>' + gActs("notice", "공지하기", d.busy) + '</section>';
 }
 function gNoticeList(){
-  var st = gStatus("notice", "아직 공지가 없어요.", gNotices); if (st) return st;
-  var p = gNotices[0], h = '';
-  h += '<article class="g-latest"><span class="g-tag">📌 최신 공지</span><h3>' + esc(p.title) + '</h3><p class="g-body">' + esc(p.body) + '</p>' +
-    '<div class="g-meta"><span>공지 <b class="num">' + gStamp(p.at) + '</b></span><span>작성자 <b>' + esc(p.author) + '</b></span></div>' +
-    '<div class="g-foot">' + gLikeBtn("n", p) + gDelBtn("n", p.id) + '</div></article>';
-  if (gNotices.length > 1) {
-    h += '<section class="g-olds glass"><h4>이전 공지 ' + (gNotices.length - 1) + '개</h4>';
-    gNotices.slice(1).forEach(function(q){
+  var h = '', pins = [], rest = [];
+  gNotices.forEach(function(p){ (p.pinned ? pins : rest).push(p); });
+  pins.sort(function(a, b){ return b.pinAt - a.pinAt; });
+  h += '<section class="n-pins" aria-label="고정 공지"><h3><span class="pi">' + G_IC_PIN + '</span>고정 공지 ' + (pins.length + 1) + '</h3>';
+  // 1) 길드 레이드 분배 방식: 항상 맨 위에 고정된 안내글
+  h += '<article class="n-guide" id="raid"><button class="n-pin-h" data-g="guide" aria-expanded="' + gGuideOpen + '"><span class="pi">' + G_IC_PIN + '</span><span class="tx"><span class="lab">안내</span><span class="tt">길드 레이드 분배 방식</span>' +
+    '<span class="pv">⚠ 구매에 지원한 템은 당첨과 상관없이 그 템의 다이아 분배 제외 · 시세의 20% 고정가</span></span><span class="cv" aria-hidden="true">›</span></button>' +
+    (gGuideOpen ? '<div class="n-guide-b">' + gRaidGuide() + '</div>' : '') + '</article>';
+  // 2) 관리자가 고정한 공지
+  pins.forEach(function(p){
+    var o = !!gOpenOld[p.id];
+    h += '<article class="n-pin"><button class="n-pin-h" data-g="old" data-id="' + esc(p.id) + '" aria-expanded="' + o + '"><span class="pi">' + G_IC_PIN + '</span><span class="tx"><span class="tt">' + esc(p.title) + '</span><span class="pv">' + esc(p.body) + '</span></span><span class="cv" aria-hidden="true">›</span></button>';
+    if (o) h += '<div class="n-pin-b"><p class="g-body">' + gLinkify(p.body) + '</p><div class="g-meta"><span>공지 <b class="num">' + gStamp(p.at) + '</b></span><span>작성자 <b>' + esc(p.author) + '</b></span></div>' + gNoticeFoot(p) + '</div>';
+    h += '</article>';
+  });
+  h += '</section>';
+  var st = gStatus("notice", "아직 일반 공지가 없어요.", rest); if (st) return h + st;
+  var p = rest[0];
+  h += '<article class="g-latest"><span class="g-tag">최신 공지</span><h3>' + esc(p.title) + '</h3><p class="g-body">' + gLinkify(p.body) + '</p>' +
+    '<div class="g-meta"><span>공지 <b class="num">' + gStamp(p.at) + '</b></span><span>작성자 <b>' + esc(p.author) + '</b></span></div>' + gNoticeFoot(p) + '</article>';
+  if (rest.length > 1) {
+    h += '<section class="g-olds glass"><h4>이전 공지 ' + (rest.length - 1) + '개</h4>';
+    rest.slice(1).forEach(function(q){
       var o = !!gOpenOld[q.id];
       h += '<div class="g-old"><button class="g-old-h" data-g="old" data-id="' + esc(q.id) + '" aria-expanded="' + o + '"><span class="d num">' + gMD(q.at) + '</span><span class="tt">' + esc(q.title) + '</span><span class="lk num" aria-label="좋아요 ' + q.likes + '개">♥ ' + q.likes + '</span><span class="cv" aria-hidden="true">›</span></button>';
-      if (o) h += '<div class="g-old-b"><p class="g-body">' + esc(q.body) + '</p><div class="g-meta"><span>공지 <b class="num">' + gStamp(q.at) + '</b></span><span>작성자 <b>' + esc(q.author) + '</b></span></div><div class="g-foot">' + gLikeBtn("n", q) + gDelBtn("n", q.id) + '</div></div>';
+      if (o) h += '<div class="g-old-b"><p class="g-body">' + gLinkify(q.body) + '</p><div class="g-meta"><span>공지 <b class="num">' + gStamp(q.at) + '</b></span><span>작성자 <b>' + esc(q.author) + '</b></span></div>' + gNoticeFoot(q) + '</div>';
       h += '</div>';
     });
     h += '</section>';
@@ -1871,23 +2074,22 @@ function gEventsOn(dayIdx){
   return list.sort(function(a, b){ return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
 }
 function gEvRow(x){
-  if (x.boss) return '<div class="g-ev' + (x.on ? '' : ' off') + '"><div class="tm num">' + (x.n > 1 ? '<small>하루</small>' + x.n + '회' : x.time) + '</div><div class="bd"><div class="nm">' + esc(x.title) + '</div><div class="ds">' + esc(x.desc) + '</div></div><span class="g-kd boss">보스</span></div>';
-  var e = x.e, kd = G_KINDS[e.kind] ? e.kind : "etc";
-  return '<div class="g-ev"><div class="tm num">' + esc(e.time) + '</div><div class="bd"><div class="nm">' + esc(e.title) + '</div>' + (e.desc ? '<div class="ds">' + esc(e.desc) + '</div>' : '') + '</div><span class="g-kd ' + kd + '">' + G_KINDS[kd] + '</span>' +
-    (admin ? '<span class="g-evadm"><button class="g-del" data-g="evedit" data-id="' + esc(e.id) + '">수정</button><button class="g-del" data-g="evdel" data-id="' + esc(e.id) + '">삭제</button></span>' : '') + '</div>';
+  if (x.boss) return '<div class="wk-ev' + (x.on ? '' : ' off') + '"><div class="mt"><span class="tm">' + (x.n > 1 ? '하루 ' + x.n + '회' : x.time) + '</span><span class="g-kd boss">보스</span></div><div class="nm">' + esc(x.title) + '</div><div class="ds">' + esc(x.desc) + '</div></div>';
+  var e = x.e, kd = G_KINDS[e.kind] ? e.kind : "etc", txt = e.title + " " + (e.desc || "");
+  return '<div class="wk-ev"><div class="mt"><span class="tm">' + esc(e.time) + '</span><span class="g-kd ' + kd + '">' + G_KINDS[kd] + '</span>' +
+    (admin ? '<span class="adm"><button class="g-del" data-g="evedit" data-id="' + esc(e.id) + '">수정</button><button class="g-del" data-g="evdel" data-id="' + esc(e.id) + '">삭제</button></span>' : '') + '</div>' +
+    '<div class="nm">' + esc(e.title) + '</div>' + (e.desc ? '<div class="ds">' + esc(e.desc) + '</div>' : '') +
+    (/지원/.test(e.title) && /분배/.test(txt) ? '<div><span class="ev-warn"><span aria-hidden="true">⚠</span>지원한 템은 다이아 분배 제외</span></div>' : '') +
+    (/분배/.test(txt) || /레이드/.test(e.title) ? '<a class="g-raidlink" href="#raid" data-g="raid">분배 방식 보기 <span aria-hidden="true">→</span></a>' : '') + '</div>';
 }
 function gSchedHead(){
   var intro = (gSched.intro || "").trim() || G_INTRO;
-  var h = '<section class="g-intro"><div class="k">우리 길드는 이렇게 움직여요</div><p>' + esc(intro) + '</p>' +
+  return '<section class="g-intro"><div class="k">우리 길드는 이렇게 움직여요</div><p>' + esc(intro) + '</p>' +
     (admin && gIntroEdit === null && !gForms.schedule ? '<button class="btn" data-g="introedit" style="margin-top:10px">소개 문구 수정</button>' : '') + '</section>';
-  h += '<div class="g-bar"><div class="g-seg" role="group" aria-label="보기"><button data-g="sweek" data-v="0" aria-pressed="' + !gSWeek + '">요일별</button><button data-g="sweek" data-v="1" aria-pressed="' + gSWeek + '">한 주 전체</button></div>' +
-    '<label class="g-chk"><input type="checkbox" data-g="showboss"' + (gShowBoss ? ' checked' : '') + '>고정 보스 같이 보기</label>' +
-    (admin && !gForms.schedule && gIntroEdit === null ? '<button class="btn primary" data-g="write" data-k="schedule">+ 일정 추가</button>' : '') + '</div>';
-  return h;
 }
 function gSchedForm(){
   if (gIntroEdit !== null) {
-    return '<section class="g-form" aria-label="소개 문구 수정"><h3>소개 문구 수정</h3><div><label class="g-l" for="gf-intro">신규 길드원에게 보여줄 소개</label><textarea class="field g-in" id="gf-intro" maxlength="500" rows="4">' + esc(gIntroEdit) + '</textarea></div>' +
+    return '<section class="g-form" aria-label="소개 문구 수정"><h3>소개 문구 수정</h3><div><label class="g-l" for="gf-intro">신규 길드원에게 보여줄 소개</label><textarea class="field g-in" id="gf-intro" maxlength="500" rows="5">' + esc(gIntroEdit) + '</textarea></div>' +
       '<div class="g-acts"><button class="btn" data-g="introcancel">취소하기</button><button class="btn primary" data-g="introsave">저장하기</button></div></section>';
   }
   var d = gForms.schedule; if (!d) return '';
@@ -1895,28 +2097,88 @@ function gSchedForm(){
   h += '<div><span class="g-l">요일 <span class="g-req">*</span> <span class="g-opt">(여러 개 선택 가능)</span></span><div class="g-pick" role="group" aria-label="요일">' + G_DAYS.map(function(n, i){ return '<button data-g="pick" data-i="' + i + '" aria-pressed="' + (d.days.indexOf(i) >= 0) + '">' + n + '</button>'; }).join('') + '</div><div class="g-err">' + (d.errs.days || '') + '</div></div>';
   h += gField("schedule", "time", "시작 시각", true, "input", 'type="time" style="max-width:170px"', d.time, d.errs.time);
   h += gField("schedule", "title", "일정 이름", true, "input", 'maxlength="30" placeholder="예: 길드 정기 사냥"', d.title, d.errs.title);
-  h += gField("schedule", "desc", "설명", false, "input", 'maxlength="60" placeholder="예: 디스코드에서 파티 모집"', d.desc, "");
+  h += gField("schedule", "desc", "설명", false, "input", 'maxlength="80" placeholder="예: 디스코드에서 파티 모집"', d.desc, "");
   h += '<div><span class="g-l">종류</span><div class="g-pick" role="group" aria-label="종류">' + Object.keys(G_KINDS).map(function(kk){ return '<button data-g="kind" data-v="' + kk + '" aria-pressed="' + (d.kind === kk) + '">' + G_KINDS[kk] + '</button>'; }).join('') + '</div></div>';
   return h + gActs("schedule", d.id ? "수정하기" : "등록하기", d.busy) + '</section>';
 }
+// 이번 주 월요일(한국 시간) 기준 날짜
+function gWeekMD(i){ var nk = k(nowT()), mon = Date.UTC(nk.getUTCFullYear(), nk.getUTCMonth(), nk.getUTCDate()) - gTodayMon() * D, d = new Date(mon + i * D); return (d.getUTCMonth() + 1) + "/" + d.getUTCDate(); }
+var G_IC_CAL = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>';
+var G_IC_SWORD = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6M16 16l4 4M19 21l2-2"/></svg>';
 function gSchedList(){
   if (!gLoaded.schedule) return '<div class="g-empty">불러오는 중…</div>';
-  var t = gTodayMon(), h = '';
+  var t = gTodayMon(), h = '<section class="chap" aria-labelledby="weekTitle">';
+  h += '<div class="chap-h"><span class="ic">' + G_IC_CAL + '</span><div class="tx"><div class="k">SCHEDULE</div><h2 id="weekTitle">이번 주 일정</h2><div class="sub">' + gWeekMD(0) + ' (월) ~ ' + gWeekMD(6) + ' (일)</div></div></div>';
+  h += '<div class="chap-tools"><label class="g-chk"><input type="checkbox" data-g="showboss"' + (gShowBoss ? ' checked' : '') + '>고정 보스 같이 보기</label>' +
+    (admin && !gForms.schedule && gIntroEdit === null ? '<button class="btn primary" data-g="write" data-k="schedule">+ 일정 추가</button>' : '') + '</div>';
   if (gShowBoss && savedLock().on) h += '<div class="g-lockline">⛔ 지금은 모든 필드 보스 통제 중이에요. 보스 일정은 참고만 해 주세요.</div>';
-  if (!gSched.events.length) h += '<p class="g-soft">아직 등록된 길드 일정이 없어요.' + (admin ? ' 위의 <b>+ 일정 추가</b>로 넣어 주세요.' : '') + '</p>';
-  if (!gSWeek) {
-    h += '<div class="g-days" role="group" aria-label="요일 선택">' + G_DAYS.map(function(d, i){
-      return '<button class="g-day' + (i === t ? ' today' : '') + '" data-g="sday" data-i="' + i + '" aria-pressed="' + (i === gSDay) + '" aria-label="' + d + '요일' + (i === t ? ', 오늘' : '') + '">' + (gEventsOn(i).length ? '<span class="cnt"></span>' : '') + '<b>' + d + '</b><small>' + (i === t ? '오늘' : '') + '</small></button>';
-    }).join('') + '</div>';
-    var list = gEventsOn(gSDay);
-    h += '<section class="g-daycard glass"><div class="g-dh"><h3>' + G_DAYS[gSDay] + '요일</h3>' + (gSDay === t ? '<span>오늘</span>' : '') + '</div><div class="g-evs">' + (list.length ? list.map(gEvRow).join('') : '<p class="g-none">이 날은 정해진 일정이 없어요.</p>') + '</div></section>';
-  } else {
-    h += '<section class="g-daycard glass">' + G_DAYS.map(function(d, i){
-      var list = gEventsOn(i);
-      return '<div class="g-dh wk"><h3>' + d + '요일</h3>' + (i === t ? '<span>오늘</span>' : '') + '</div><div class="g-evs">' + (list.length ? list.map(gEvRow).join('') : '<p class="g-none">일정 없음</p>') + '</div>';
-    }).join('') + '</section>';
-  }
+  if (!gSched.events.length) h += '<p class="g-soft">아직 등록된 길드 일정이 없어요.' + (admin ? ' <b>+ 일정 추가</b>로 넣어 주세요.' : '') + '</p>';
+  h += '<div class="g-wk glass">' + G_DAYS.map(function(d, i){
+    var list = gEventsOn(i), cls = "wk-day" + (i === t ? " today" : "") + (i === 5 ? " sat" : "") + (i === 6 ? " sun" : "") + (list.length ? "" : " is-empty");
+    return '<div class="' + cls + '"><div class="wk-badge" aria-label="' + d + '요일' + (i === t ? ', 오늘' : '') + '"><b aria-hidden="true">' + d + '</b><small aria-hidden="true">' + (i === t ? '오늘' : gWeekMD(i)) + '</small></div>' +
+      '<div class="wk-body">' + (list.length ? list.map(gEvRow).join('') : '<div class="wk-empty">일정 없음</div>') + '</div></div>';
+  }).join('') + '</div></section>';
+  h += '<a class="g-raidcard" href="#raid" data-g="raid"><span class="ic">' + G_IC_SWORD + '</span><span class="tx"><b>길드 레이드 분배 방식</b><small>공지사항 고정글에서 자세히 보기</small></span><span class="ar" aria-hidden="true">→</span></a>';
   return h;
+}
+
+/* ---------- 길드 레이드 분배 방식 (공지사항 고정 안내글) ---------- */
+var gGuideOpen = false, gRaidChoice = "buy", gRaidMkt = "10,000", gRaidFaq = {};
+function gRaidWhen(){
+  var r = null;
+  gSched.events.forEach(function(e){ if (!r && /레이드/.test(e.title) && !/분배|지원/.test(e.title)) r = e; });
+  return r ? r.days.slice().sort().map(function(d){ return G_DAYS[d]; }).join("·") + "요일 " + r.time : "";
+}
+function gRaidPrice(){ var n = parseInt(String(gRaidMkt).replace(/[^\d]/g, ""), 10); return isNaN(n) ? "–" : Math.round(n * 0.2).toLocaleString("ko-KR"); }
+function gRaidChoiceHtml(){
+  var ox = function(o){ return '<span class="ox ' + (o ? 'o' : 'x') + '" aria-hidden="true">' + (o ? '○' : '✕') + '</span>'; };
+  return gRaidChoice === "buy"
+    ? '<div class="r-res buy"><div class="t">이 템을 살 기회를 가져요</div><ul class="r-cmp">' +
+      '<li><span class="k2">구매 기회</span>' + ox(1) + '<span>당첨되면 시세의 20%에 구매</span></li>' +
+      '<li class="hot"><span class="k2">이 템 분배</span>' + ox(0) + '<span>이 템의 다이아 분배 없음</span></li>' +
+      '<li class="hot"><span class="k2">떨어지면?</span>' + ox(0) + '<span>그래도 이 템 분배 없음</span></li>' +
+      '<li><span class="k2">다른 템 분배</span>' + ox(1) + '<span>지원 안 한 템은 그대로 받음</span></li></ul></div>'
+    : '<div class="r-res dia"><div class="t">이 템의 다이아를 분배 받아요</div><ul class="r-cmp">' +
+      '<li><span class="k2">구매 기회</span>' + ox(0) + '<span>이 템은 구매할 수 없음</span></li>' +
+      '<li><span class="k2">이 템 분배</span>' + ox(1) + '<span>지원 안 한 사람끼리 나눠 받음</span></li>' +
+      '<li><span class="k2">조건</span>' + ox(1) + '<span>길드 레이드에 참석한 경우에만</span></li></ul></div>';
+}
+function gRaidFaqItem(id, q, a){
+  var o = !!gRaidFaq[id];
+  return '<div class="r-q"><button class="r-q-h" data-g="rf" data-id="' + id + '" aria-expanded="' + o + '"><span class="q">Q</span><span class="tt">' + q + '</span><span class="cv" aria-hidden="true">›</span></button>' + (o ? '<div class="r-q-b">' + a + '</div>' : '') + '</div>';
+}
+function gRaidGuide(){
+  var when = gRaidWhen(), h = '';
+  h += '<div class="r-warn" role="note"><span class="wi" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18v.5"/></svg></span>' +
+    '<div><div class="wlab">꼭 확인하세요</div><p class="wt">구매에 지원한 템은<br><em>그 템의 다이아 분배를 못 받아요</em></p>' +
+    '<p class="ws">뽑기 · 주사위에서 <b>떨어져도 똑같이 제외</b>돼요. 지원하지 않은 다른 템의 분배는 그대로 받아요.</p></div></div>';
+  h += '<div class="r-price"><div class="lb">드랍된 아이템 · 스킬 구매 가격</div><p class="big">시세의 <em>20%</em> 고정가</p>' +
+    '<div class="r-case a"><div class="ch"><span class="ab">A</span><span class="ct">거래소에 있는 템</span></div><div class="cd"><b>거래소 시세</b>의 20%로 구매해요.</div>' +
+    '<div class="r-calc"><div><label for="gf-mkt">거래소 시세 넣어 보기</label><div class="in"><input class="field" id="gf-mkt" inputmode="numeric" autocomplete="off" value="' + esc(gRaidMkt) + '"><span class="unit">다이아</span></div></div>' +
+    '<div class="out"><span class="ol">길드 구매가</span><div class="v num" id="gRaidOut" aria-live="polite">' + gRaidPrice() + '<small>다이아</small></div></div></div>' +
+    '<div class="r-quick" role="group" aria-label="예시 시세"><button data-g="rq" data-v="10000">T5 장비 예시 · 1만</button><button data-g="rq" data-v="5000">5천</button><button data-g="rq" data-v="30000">3만</button></div></div>' +
+    '<div class="r-case b"><div class="ch"><span class="ab">B</span><span class="ct">거래소에 없는 템</span></div><div class="cd"><b>운영진 판단하에 시세를 결정</b>하고, 그 시세의 20%로 구매해요. 정해진 시세는 드랍 공개 때 함께 알려드려요.</div></div></div>';
+  h += '<ol class="r-steps">' +
+    '<li><span class="n">1</span><div><b>아이템 · 스킬 드랍</b><span>' + (when ? esc(when) + ' 레이드가 끝나면' : '레이드가 끝나면') + ' 드랍된 템을 공개해요. 거래소에 없는 템은 운영진이 시세를 정해요.</span></div></li>' +
+    '<li class="warn"><span class="n">2</span><div><b>구매 희망자 지원</b><span><b class="hl">수요일 01:00부터 수요일 하루 동안</b> 템마다 지원을 받아요.</span><br><span class="tag">⚠ 지원한 템은 당첨과 상관없이 그 템의 다이아 분배 제외</span></div></li>' +
+    '<li><span class="n">3</span><div><b>구매자 결정</b><span>템마다 지원자 중 뽑기 · 주사위로 정해요.</span></div></li>' +
+    '<li><span class="n">4</span><div><b>20% 고정가로 구매</b><span>당첨자가 시세의 20% 다이아를 내고 가져가요.</span></div></li></ol>';
+  h += '<div class="r-choice"><h3>템마다 골라요: 이 템, 지원할까?</h3><p class="sub">한 템에 대해서는 <b>둘 중 하나만</b> 고를 수 있어요. 눌러서 비교해 보세요.</p>' +
+    '<div class="r-opts" role="group" aria-label="선택"><button class="r-opt buy" data-g="rc" data-v="buy" aria-pressed="' + (gRaidChoice === "buy") + '">이 템 구매에 지원<small>살 기회를 갖기</small></button>' +
+    '<button class="r-opt dia" data-g="rc" data-v="dia" aria-pressed="' + (gRaidChoice === "dia") + '">이 템은 지원 안 함<small>다이아 분배 받기</small></button><span class="r-or" aria-hidden="true">또는</span></div>' +
+    '<div id="gRaidRes">' + gRaidChoiceHtml() + '</div></div>';
+  h += '<div class="r-faq"><h3>자주 묻는 질문</h3>' +
+    gRaidFaqItem("multi", "템이 여러 개 나오면 어떻게 되나요?", '템마다 따로예요. <b>지원한 템의 분배에서만 제외</b>되고, 지원하지 않은 템의 다이아 분배는 그대로 받아요.') +
+    gRaidFaqItem("fail", "주사위에서 떨어지면 그 템 분배를 받을 수 있나요?", '아니요. 지원한 순간 그 템의 <b>구매 기회를 가진 것</b>으로 보기 때문에, 당첨되지 않아도 그 템의 다이아 분배에서는 제외돼요.') +
+    gRaidFaqItem("when", "구매 지원은 언제 하나요?", '<b>수요일 01:00부터 수요일 하루 동안</b> 받아요.') +
+    gRaidFaqItem("nomkt", "거래소에 없는 템은 얼마에 사나요?", '<b>운영진 판단하에 시세를 정하고</b>, 그 시세의 20%로 구매해요. 정해진 시세는 드랍 공개 때 함께 알려드려요.') +
+    gRaidFaqItem("absent", "레이드에 참석하지 않았는데 분배 받을 수 있나요?", '아니요. 다이아 분배는 <b>길드 레이드에 참석한 인원</b>에게만 제공돼요.') + '</div>';
+  return h;
+}
+function gGoRaid(){
+  gGuideOpen = true;
+  if (gView !== "notice") gSetView("notice"); else gRenderView(true);
+  setTimeout(function(){ var g = document.getElementById("raid"); if (g) g.scrollIntoView({ block: "start" }); }, 30);
 }
 
 /* ---------- 저장 ---------- */
@@ -1956,7 +2218,7 @@ function gSubmit(kind){
     var events = d.id ? gSched.events.map(function(x){ return x.id === d.id ? ev : x; }) : gSched.events.concat([ev]);
     d.busy = true; gRenderForm();
     gSaveSched({ intro: gSched.intro, events: events }, d.id ? "일정을 수정했어요." : "일정을 추가했어요.").then(function(){
-      gForms.schedule = null; gSDay = ev.days[0]; gRenderView();
+      gForms.schedule = null; gRenderView();
     }, function(){ d.busy = false; gRenderForm(); });
     return;
   }
@@ -1998,7 +2260,7 @@ function gToggleLike(kind, id){
 }
 function gRefocus(sel){ var b = gViewEl[gView] && gViewEl[gView].querySelector(sel); if (b) b.focus(); }
 function gOpenForm(kind){
-  if (kind === "schedule") gForms.schedule = { days: [gSDay], time: "", title: "", desc: "", kind: "guild", errs: {} };
+  if (kind === "schedule") gForms.schedule = { days: [gTodayMon()], time: "", title: "", desc: "", kind: "guild", errs: {} };
   else gForms[kind] = { title: "", body: "", author: gGet("guild-author", ""), links: [""], errs: {} };
   gRenderView();
   var f = gViewEl[gView].querySelector(".g-form .g-in, .g-form .g-pick button"); if (f) f.focus();
@@ -2026,8 +2288,24 @@ Object.keys(gViewEl).forEach(function(key){
     if (g === "sort") { gTipSort = b.getAttribute("data-v"); gRenderView(true); return gRefocus('[data-g="sort"][data-v="' + gTipSort + '"]'); }
     if (g === "addlink") { gForms.tips.links.push(""); gRenderForm(); var ls = el.querySelectorAll("[data-gl]"); if (ls.length) ls[ls.length - 1].focus(); return; }
     if (g === "rmlink") { gForms.tips.links.splice(+b.getAttribute("data-i"), 1); gForms.tips.errs = {}; return gRenderForm(); }
-    if (g === "sday") { gSDay = +b.getAttribute("data-i"); gRenderView(true); return gRefocus('[data-g="sday"][data-i="' + gSDay + '"]'); }
-    if (g === "sweek") { gSWeek = b.getAttribute("data-v") === "1"; gRenderView(true); return gRefocus('[data-g="sweek"][data-v="' + (gSWeek ? 1 : 0) + '"]'); }
+    if (g === "raid") { e.preventDefault(); return gGoRaid(); }
+    if (g === "guide") { gGuideOpen = !gGuideOpen; gRenderView(true); return gRefocus('[data-g="guide"]'); }
+    if (g === "rq") { gRaidMkt = (+b.getAttribute("data-v")).toLocaleString("ko-KR"); var mi = document.getElementById("gf-mkt"); if (mi) mi.value = gRaidMkt; var ro = document.getElementById("gRaidOut"); if (ro) ro.innerHTML = gRaidPrice() + '<small>다이아</small>'; return; }
+    if (g === "rc") {
+      gRaidChoice = b.getAttribute("data-v");
+      el.querySelectorAll('[data-g="rc"]').forEach(function(x){ x.setAttribute("aria-pressed", String(x.getAttribute("data-v") === gRaidChoice)); });
+      var rr = document.getElementById("gRaidRes"); if (rr) rr.innerHTML = gRaidChoiceHtml(); return;
+    }
+    if (g === "rf") { gRaidFaq[id] = !gRaidFaq[id]; gRenderView(true); return gRefocus('[data-g="rf"][data-id="' + id + '"]'); }
+    if (g === "pin" && admin) {
+      var np = null; gNotices.forEach(function(x){ if (x.id === id) np = x; }); if (!np) return;
+      var pinOn = !np.pinned;
+      if (pinOn && gNotices.filter(function(x){ return x.pinned; }).length >= 3) { toast("고정 공지는 최대 3개까지예요. 다른 고정을 먼저 해제해 주세요.", "bad"); return; }
+      var pinDone = function(){ toast(pinOn ? "공지를 맨 위에 고정했어요." : "고정을 해제했어요.", "ok"); };
+      if (!LIVE) { np.pinned = pinOn; np.pinAt = nowT(); gRenderView(true); pinDone(); return; }
+      gDb.collection("notices").doc(id).update({ pinned: pinOn, pinAt: firebase.firestore.FieldValue.serverTimestamp() }).then(pinDone, function(err){ toast(gErrMsg(err), "bad"); });
+      return;
+    }
     if (g === "pick") { var d = gForms.schedule, i = +b.getAttribute("data-i"), at = d.days.indexOf(i); if (at >= 0) d.days.splice(at, 1); else d.days.push(i); d.errs.days = ""; gRenderForm(); return gRefocus('[data-g="pick"][data-i="' + i + '"]'); }
     if (g === "kind") { gForms.schedule.kind = b.getAttribute("data-v"); gRenderForm(); return gRefocus('[data-g="kind"][data-v="' + gForms.schedule.kind + '"]'); }
     if (g === "introedit" && admin) { gForms.schedule = null; gIntroEdit = gSched.intro || G_INTRO; gRenderView(); var t = document.getElementById("gf-intro"); if (t) t.focus(); return; }
@@ -2059,6 +2337,12 @@ Object.keys(gViewEl).forEach(function(key){
       if (gForms[kk].errs[f]) { gForms[kk].errs[f] = ""; e.target.classList.remove("bad"); var er = document.getElementById(e.target.id + "-err"); if (er) er.textContent = ""; }
     }
     if (li != null && gForms.tips) gForms.tips.links[+li] = e.target.value;
+    if (e.target.id === "gf-mkt") {
+      var raw = e.target.value.replace(/[^\d]/g, "").slice(0, 10);
+      gRaidMkt = raw ? (+raw).toLocaleString("ko-KR") : "";
+      e.target.value = gRaidMkt;
+      var ro = document.getElementById("gRaidOut"); if (ro) ro.innerHTML = gRaidPrice() + '<small>다이아</small>';
+    }
   });
 });
 window.addEventListener("beforeunload", function(e){
@@ -2066,7 +2350,8 @@ window.addEventListener("beforeunload", function(e){
   if (busy) { e.preventDefault(); e.returnValue = ""; }
 });
 
-/* 첫 화면 */
+/* 첫 화면 (…/boss/#raid 로 들어오면 공지의 분배 방식 안내글을 펼쳐서 보여줌) */
+if (location.hash === "#raid") { gGuideOpen = true; setTimeout(function(){ var g = document.getElementById("raid"); if (g) g.scrollIntoView({ block: "start" }); }, 60); }
 app.hidden = gView !== "boss";
 Object.keys(gViewEl).forEach(function(key){ gViewEl[key].hidden = key !== gView; });
 if (gView !== "boss") gRenderView();
