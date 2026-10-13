@@ -636,6 +636,25 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 .gnav-b{font-size:13px}
 .gnav-b:not([aria-current="page"]){color:#b3a996}
 .g-old-h .d{min-width:46px;color:#b3a996}
+
+/* 꿀팁 사진 */
+.g-imgs-in{display:flex;flex-wrap:wrap;gap:8px}
+.g-thumb{position:relative;width:88px;height:88px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#100e0b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.g-thumb img{width:100%;height:100%;object-fit:cover}
+.g-thumb-x{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.7);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center}
+.g-thumb.add{cursor:pointer;border:1px dashed rgba(227,178,94,.5);color:var(--gold-hi)}
+.g-thumb.add span{font-size:24px;line-height:1}
+.g-thumb small{font-size:12px;font-weight:700;color:var(--muted)}
+.g-thumb.add:focus-within{outline:2px solid var(--gold-hi);outline-offset:2px}
+.g-file{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.g-thumb .spin,.g-pic-wait .spin{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,235,200,.15);border-top-color:var(--gold);animation:gspin .8s linear infinite}
+.g-pics{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.g-pic{display:block;width:100%;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0d0c0a;cursor:zoom-in}
+.g-pic img{display:block;width:100%;height:auto;max-height:520px;object-fit:contain}
+.g-pic-wait{display:flex;align-items:center;justify-content:center;gap:8px;min-height:120px;border-radius:14px;border:1px dashed var(--line);color:var(--muted);font-size:13.5px}
+.g-lightbox{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) 12px calc(16px + env(safe-area-inset-bottom,0px));cursor:zoom-out}
+.g-lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.g-lb-x{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.14);color:#fff;font-size:18px}
 </style>
 </head>
 <body>
@@ -667,7 +686,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-14 03:00"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-14 03:10"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 /* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
@@ -1695,7 +1714,7 @@ function gRows(snap){
   return snap.docs.map(function(d){
     var x = d.data({ serverTimestamps: "estimate" }) || {}, ts = x.createdAt;
     return { id: d.id, title: String(x.title || ""), body: String(x.body || ""), author: String(x.author || ""),
-      links: Array.isArray(x.links) ? x.links.filter(gSafeUrl).slice(0, 3) : [],
+      links: Array.isArray(x.links) ? x.links.filter(gSafeUrl).slice(0, 3) : [], images: Math.max(0, Math.min(3, +x.images || 0)),
       likes: Math.max(0, +x.likes || 0), at: ts && ts.toMillis ? ts.toMillis() : nowT(),
       pinned: x.pinned === true, pinAt: x.pinAt && x.pinAt.toMillis ? x.pinAt.toMillis() : 0 };
   });
@@ -1935,6 +1954,11 @@ function gTipsForm(){
       (d.links.length > 1 ? '<button class="g-x" data-g="rmlink" data-i="' + i + '" aria-label="링크 ' + (i + 1) + ' 지우기">✕</button>' : '') + '</div>';
   });
   h += '</div><div class="g-err">' + (d.errs.link || '') + '</div>' + (d.links.length < 3 ? '<button class="btn" data-g="addlink" style="margin-top:6px">+ 링크 추가</button>' : '') + '</div>';
+  h += '<div><span class="g-l">사진 <span class="g-opt">(선택 · 최대 ' + G_IMG_MAX + '장 · 자동으로 줄여서 올려요)</span></span><div class="g-imgs-in">' +
+    d.imgs.map(function(u, i){ return '<div class="g-thumb"><img src="' + u + '" alt="첨부 사진 ' + (i + 1) + '"><button class="g-thumb-x" data-g="rmimg" data-i="' + i + '" aria-label="사진 ' + (i + 1) + ' 빼기">✕</button></div>'; }).join('') +
+    (d.imgBusy ? '<div class="g-thumb busy" role="status"><span class="spin" aria-hidden="true"></span><small>줄이는 중…</small></div>' : '') +
+    (d.imgs.length < G_IMG_MAX && !d.imgBusy ? '<label class="g-thumb add"><input type="file" accept="image/*" multiple data-g="timg" class="g-file"><span aria-hidden="true">＋</span><small>사진 추가</small></label>' : '') +
+    '</div><div class="g-err">' + (d.errs.img || '') + '</div></div>';
   h += gField("tips", "author", "작성자", true, "input", 'maxlength="20" autocomplete="nickname" placeholder="게임 닉네임"', d.author, d.errs.author);
   return h + gActs("tips", "등록하기", d.busy) + '</section>';
 }
@@ -1944,7 +1968,7 @@ function gTipsList(){
   var list = gTipsSorted();
   return '<section class="g-olds glass n-board" aria-label="꿀팁 목록"><h4>꿀팁 ' + list.length + '개</h4>' + list.map(function(p){
     return '<div class="g-old"><button class="g-old-h t-row" data-g="topen" data-id="' + esc(p.id) + '"><span class="d num">' + gMD(p.at) + '</span>' +
-      '<span class="tt"><span class="t-tt">' + esc(p.title) + '</span><small class="t-sub">' + esc(p.author) + ' · ' + gAgo(p.at) + (p.links.length ? ' · 링크 ' + p.links.length + '개' : '') + '</small></span>' +
+      '<span class="tt"><span class="t-tt">' + esc(p.title) + '</span><small class="t-sub">' + esc(p.author) + ' · ' + gAgo(p.at) + (p.images ? ' · 사진 ' + p.images + '장' : '') + (p.links.length ? ' · 링크 ' + p.links.length + '개' : '') + '</small></span>' +
       '<span class="lk num" aria-label="좋아요 ' + p.likes + '개">♥ ' + p.likes + '</span><span class="cv" aria-hidden="true">›</span></button></div>';
   }).join("") + '</section>';
 }
@@ -1954,6 +1978,11 @@ function gTipDetail(){
   if (idx < 0) return '<div class="g-empty">삭제되었거나 찾을 수 없는 꿀팁이에요.</div>';
   var p = list[idx], prev = list[idx - 1], next = list[idx + 1];
   var h = '<article class="g-post glass n-detail"><h3 tabindex="-1">' + esc(p.title) + '</h3><p class="g-body">' + esc(p.body) + '</p>';
+  if (p.images) {
+    var im = gTipImgs[p.id];
+    if (im) h += '<div class="g-pics">' + im.map(function(u, i){ return '<button class="g-pic" data-g="imgview" data-id="' + esc(p.id) + '" data-i="' + i + '" aria-label="사진 ' + (i + 1) + ' 크게 보기"><img src="' + u + '" alt="첨부 사진 ' + (i + 1) + '" loading="lazy"></button>'; }).join('') + '</div>';
+    else { h += '<div class="g-pics"><div class="g-pic-wait" role="status"><span class="spin" aria-hidden="true"></span>사진 불러오는 중…</div></div>'; gLoadTipImgs(p.id); }
+  }
   if (p.links.length) h += '<div class="g-links">' + p.links.map(function(u){ return '<a class="g-lnk" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer nofollow">' + G_IC_URL + '<span>' + esc(u.replace(/^https?:\/\//i, "")) + '</span></a>'; }).join("") + '</div>';
   h += '<div class="g-meta"><span>작성자 <b>' + esc(p.author) + '</b></span><span class="num">' + gStamp(p.at) + '</span><span>' + gAgo(p.at) + '</span></div><div class="g-foot">' + gLikeBtn("t", p) + gDelBtn("t", p.id) + '</div></article>';
   h += gNavPair(list, idx, "tgo", "꿀팁");
@@ -2121,6 +2150,60 @@ function gGoRaid(){
 }
 
 /* ---------- 저장 ---------- */
+/* ---------- 꿀팁 사진: 브라우저에서 줄여서 Firestore(tipImages)에 따로 저장 ---------- */
+var G_IMG_MAX = 3, G_IMG_LIMIT = 330000, gTipImgs = {}, gTipImgLoading = {};
+function gCompressImage(file){
+  return new Promise(function(res, rej){
+    if (!file || !/^image\//.test(file.type)) return rej(new Error("type"));
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function(){
+      URL.revokeObjectURL(url);
+      var w = img.naturalWidth, h = img.naturalHeight, base = Math.min(1, 1280 / Math.max(w, h));
+      var tries = [[1, .78], [.85, .72], [.7, .68], [.55, .62], [.42, .58]];
+      for (var i = 0; i < tries.length; i++) {
+        var c = document.createElement("canvas"), sc = base * tries[i][0];
+        c.width = Math.max(1, Math.round(w * sc)); c.height = Math.max(1, Math.round(h * sc));
+        var ctx = c.getContext("2d"); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+        var d = c.toDataURL("image/jpeg", tries[i][1]);
+        if (d.length <= G_IMG_LIMIT) return res(d);
+      }
+      rej(new Error("big"));
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); rej(new Error("decode")); };
+    img.src = url;
+  });
+}
+function gLoadTipImgs(id){
+  if (gTipImgLoading[id] || gTipImgs[id]) return;
+  gTipImgLoading[id] = true;
+  if (!LIVE) { gTipImgs[id] = []; return; }
+  gDb.collection("tipImages").where("tip", "==", id).get().then(function(q){
+    var arr = []; q.docs.forEach(function(d){ var x = d.data(); if (typeof x.data === "string" && /^data:image\/jpeg;base64,/.test(x.data)) arr[+x.i || 0] = x.data; });
+    gTipImgs[id] = arr.filter(Boolean);
+  }, function(){ gTipImgs[id] = []; }).then(function(){ delete gTipImgLoading[id]; if (gView === "tips" && gTDetail === id) gRenderView(true); });
+}
+function gAddTip(data, imgs){
+  data.images = imgs.length;
+  if (!LIVE) {
+    var row = { id: "t" + Date.now(), title: data.title, body: data.body, author: data.author, links: data.links || [], images: imgs.length, likes: 0, at: nowT() };
+    gTipImgs[row.id] = imgs.slice(); gTips.unshift(row); gOnData("tips"); return Promise.resolve();
+  }
+  var ref = gDb.collection("tips").doc(), batch = gDb.batch();
+  data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+  batch.set(ref, data);
+  imgs.forEach(function(u, i){ batch.set(gDb.collection("tipImages").doc(ref.id + "_" + i), { tip: ref.id, i: i, data: u }); });
+  return batch.commit();
+}
+function gImgView(id, i){
+  var arr = gTipImgs[id]; if (!arr || !arr[i]) return;
+  var prevFocus = document.activeElement, box = document.createElement("div");
+  box.className = "g-lightbox"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); box.setAttribute("aria-label", "사진 크게 보기");
+  box.innerHTML = '<img src="' + arr[i] + '" alt="첨부 사진 ' + (i + 1) + '"><button class="g-lb-x" aria-label="닫기">✕</button>';
+  var close = function(){ box.remove(); document.removeEventListener("keydown", onKey); if (prevFocus) prevFocus.focus(); };
+  var onKey = function(e){ if (e.key === "Escape") close(); };
+  box.addEventListener("click", close); document.addEventListener("keydown", onKey);
+  document.body.appendChild(box); box.querySelector(".g-lb-x").focus();
+}
 function gAdd(col, data){
   if (!LIVE) {
     var row = { id: col.charAt(0) + Date.now(), title: data.title, body: data.body, author: data.author, links: data.links || [], likes: 0, at: nowT() };
@@ -2132,8 +2215,14 @@ function gAdd(col, data){
 }
 function gRemove(col, id){
   if (!LIVE) {
-    if (col === "notices") gNotices = gNotices.filter(function(x){ return x.id !== id; }); else gTips = gTips.filter(function(x){ return x.id !== id; });
+    if (col === "notices") gNotices = gNotices.filter(function(x){ return x.id !== id; }); else { gTips = gTips.filter(function(x){ return x.id !== id; }); delete gTipImgs[id]; }
     gOnData(col === "notices" ? "notice" : "tips"); return Promise.resolve();
+  }
+  if (col === "tips") {
+    return gDb.collection("tipImages").where("tip", "==", id).get().then(function(q){
+      var batch = gDb.batch(); q.docs.forEach(function(d){ batch.delete(d.ref); });
+      batch.delete(gDb.collection("tips").doc(id)); return batch.commit();
+    });
   }
   return gDb.collection(col).doc(id).delete();
 }
@@ -2186,7 +2275,8 @@ function gSubmit(kind){
   var data = { title: d.title.trim(), body: d.body.trim(), author: d.author.trim(), likes: 0 };
   if (kind === "tips") data.links = links;
   d.busy = true; gRenderForm();
-  gAdd(kind === "notice" ? "notices" : "tips", data).then(function(){
+  if (kind === "tips" && d.imgBusy) { d.busy = false; gRenderForm(); toast("사진을 줄이는 중이에요. 잠시 후 다시 눌러 주세요.", "bad"); return; }
+  (kind === "tips" ? gAddTip(data, d.imgs || []) : gAdd("notices", data)).then(function(){
     gSet("guild-author", data.author);
     if (kind === "tips") { gSet("guild-lastpost", Date.now()); gTipSort = "new"; }
     gForms[kind] = null; gRenderView();
@@ -2209,7 +2299,7 @@ function gToggleLike(kind, id){
 function gRefocus(sel){ var b = gViewEl[gView] && gViewEl[gView].querySelector(sel); if (b) b.focus(); }
 function gOpenForm(kind){
   if (kind === "schedule") gForms.schedule = { days: [gTodayMon()], time: "", title: "", desc: "", kind: "guild", errs: {} };
-  else gForms[kind] = { title: "", body: "", author: gGet("guild-author", ""), links: [""], errs: {} };
+  else gForms[kind] = { title: "", body: "", author: gGet("guild-author", ""), links: [""], imgs: [], errs: {} };
   gRenderView();
   var f = gViewEl[gView].querySelector(".g-form .g-in, .g-form .g-pick button"); if (f) f.focus();
 }
@@ -2237,6 +2327,8 @@ Object.keys(gViewEl).forEach(function(key){
     if (g === "rmlink") { gForms.tips.links.splice(+b.getAttribute("data-i"), 1); gForms.tips.errs = {}; return gRenderForm(); }
     if (g === "raid") { e.preventDefault(); return gGoRaid(); }
     if (g === "nopen") return gOpenNotice(id);
+    if (g === "rmimg" && gForms.tips) { gForms.tips.imgs.splice(+b.getAttribute("data-i"), 1); return gRenderForm(); }
+    if (g === "imgview") return gImgView(id, +b.getAttribute("data-i"));
     if (g === "nedit" && admin) {
       var ep = null; gNotices.forEach(function(x){ if (x.id === id) ep = x; }); if (!ep) return;
       gForms.notice = { id: ep.id, title: ep.title, body: ep.body, author: ep.author, links: [], errs: {} };
@@ -2284,6 +2376,14 @@ Object.keys(gViewEl).forEach(function(key){
     }
   });
   el.addEventListener("change", function(e){
+    if (e.target.getAttribute("data-g") === "timg" && gForms.tips) {
+      var d = gForms.tips, files = Array.prototype.slice.call(e.target.files || [], 0, G_IMG_MAX - d.imgs.length);
+      if (!files.length) return;
+      d.imgBusy = true; d.errs.img = ""; gRenderForm();
+      files.reduce(function(pr, f){ return pr.then(function(){ return gCompressImage(f).then(function(u){ if (d.imgs.length < G_IMG_MAX) d.imgs.push(u); }, function(err){ d.errs.img = err && err.message === "type" ? "사진 파일만 올릴 수 있어요." : "이 사진은 올릴 수 없어요. 다른 사진으로 시도해 주세요."; }); }); }, Promise.resolve())
+        .then(function(){ d.imgBusy = false; if (gForms.tips === d) gRenderForm(); });
+      return;
+    }
     if (e.target.getAttribute("data-g") === "showboss") { gShowBoss = e.target.checked; gRenderView(true); gRefocus('[data-g="showboss"]'); }
   });
   el.addEventListener("input", function(e){
