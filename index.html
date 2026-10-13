@@ -825,6 +825,32 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 .n-dh{display:flex;flex-direction:column;gap:6px;padding:0 4px}
 .n-dh .n-tag{align-self:flex-start}
 .n-dh h3{margin:0;font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--cream)}
+
+/* 분배 안내: 요약 · 예시 */
+.r-h{margin:6px 4px -4px;font-size:13px;font-weight:900;letter-spacing:.04em;color:var(--gold)}
+.r-sum{padding:18px;border-radius:22px;border:1px solid rgba(227,178,94,.45);background:linear-gradient(170deg,#2a2216,#17140f)}
+.r-lab{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11.5px;font-weight:900;color:#1d1408;background:var(--gold)}
+.r-sum p{margin:10px 0 0;font-size:18px;font-weight:700;line-height:1.55;color:var(--cream);word-break:keep-all}
+.r-sum p b{color:var(--gold-hi)}
+.r-steps li.gold{margin:4px -10px;padding:12px 10px;border-radius:16px;background:rgba(227,178,94,.08);box-shadow:inset 0 0 0 1px rgba(227,178,94,.4)}
+.r-steps li.warn + li,.r-steps li.gold{border-top-color:transparent}
+.r-ex{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:22px;background:rgba(255,235,200,.03);border:1px solid var(--line)}
+.r-ex-k{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.r-ex-item{font-size:14.5px;color:#d9cfbd;word-break:keep-all}
+.r-ex-item b{color:var(--cream)}
+.r-ex .g{color:var(--gold-hi)}
+.r-ex .r{color:#ff9b85}
+.r-ex-grp{display:grid;grid-template-columns:auto 1fr;gap:16px;padding:12px;border-radius:16px;background:rgba(0,0,0,.22)}
+.r-ps{display:inline-flex;gap:5px;flex-wrap:wrap}
+.r-p{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--num);font-weight:800;font-size:14px}
+.r-p.buy{background:rgba(240,138,108,.18);color:#ffb39f;border:1.5px solid rgba(240,138,108,.7)}
+.r-p.dia{background:rgba(227,178,94,.16);color:var(--gold-hi);border:1.5px solid rgba(227,178,94,.7)}
+.r-ex-res{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.r-ex-res li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px dashed rgba(255,235,200,.1);font-size:14px;color:#d9cfbd;word-break:keep-all}
+.r-ex-res li:first-child{border-top:none;padding-top:0}
+.r-ex-res li > .r-ps{flex:none;max-width:72px}
+.r-ex-res li > .r-ps .r-p{width:26px;height:26px;font-size:12.5px}
+.r-ex-res b{color:var(--cream)}
 </style>
 </head>
 <body>
@@ -856,7 +882,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-14 02:20"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-14 02:30"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 /* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
@@ -2153,8 +2179,7 @@ function gSchedList(){
   if (!gLoaded.schedule) return '<div class="g-empty">불러오는 중…</div>';
   var t = gTodayMon(), h = '<section class="chap" aria-labelledby="weekTitle">';
   h += '<div class="chap-h"><span class="ic">' + G_IC_CAL + '</span><div class="tx"><div class="k">SCHEDULE</div><h2 id="weekTitle">이번 주 일정</h2><div class="sub">' + gWeekMD(0) + ' (월) ~ ' + gWeekMD(6) + ' (일)</div></div></div>';
-  h += '<div class="chap-tools"><label class="g-chk"><input type="checkbox" data-g="showboss"' + (gShowBoss ? ' checked' : '') + '>고정 보스 같이 보기</label>' +
-    (admin && !gForms.schedule && gIntroEdit === null ? '<button class="btn primary" data-g="write" data-k="schedule">+ 일정 추가</button>' : '') + '</div>';
+  if (admin && !gForms.schedule && gIntroEdit === null) h += '<div class="chap-tools"><button class="btn primary" data-g="write" data-k="schedule">+ 일정 추가</button></div>';
   if (gShowBoss && savedLock().on) { var lnote = lockNote(savedLock()); h += '<div class="g-lockline">⛔ 지금은 모든 필드 보스 통제 중이에요' + (lnote ? ' ' + esc(lnote) : '') + '. 보스 일정은 참고만 해 주세요.</div>'; }
   if (!gSched.events.length) h += '<p class="g-soft">아직 등록된 길드 일정이 없어요.' + (admin ? ' <b>+ 일정 추가</b>로 넣어 주세요.' : '') + '</p>';
   h += '<div class="g-wk glass">' + G_DAYS.map(function(d, i){
@@ -2193,24 +2218,42 @@ function gRaidFaqItem(id, q, a){
 }
 function gRaidGuide(){
   var when = gRaidWhen(), h = '';
+  // 1) 3초 요약
+  h += '<div class="r-sum"><div class="r-lab">3초 요약</div><p>레이드 템은 원하는 사람이 <b>시세의 20%</b>에 사고, 그 다이아는 <b>지원하지 않은 참석자</b>끼리 나눠요.</p></div>';
+  // 2) 진행 순서 (5단계)
+  h += '<div class="r-h">진행 순서</div><ol class="r-steps">' +
+    '<li><span class="n">1</span><div><b>아이템 · 스킬 드랍</b><span>' + (when ? esc(when) + ' 레이드가 끝나면' : '레이드가 끝나면') + ' 드랍된 템을 공개해요.</span></div></li>' +
+    '<li class="warn"><span class="n">2</span><div><b>구매 지원</b><span><b class="hl">수요일 01:00부터 하루 동안</b>, 사고 싶은 템에 지원해요.</span><br><span class="tag">⚠ 지원한 템은 떨어져도 그 템의 다이아 분배 제외</span></div></li>' +
+    '<li><span class="n">3</span><div><b>구매자 결정</b><span>템마다 지원자 중 뽑기 · 주사위로 1명을 정해요.</span></div></li>' +
+    '<li><span class="n">4</span><div><b>시세의 20%로 구매</b><span>당첨자가 시세의 20%만큼 다이아를 내요.</span></div></li>' +
+    '<li class="gold"><span class="n">5</span><div><b>다이아 분배</b><span>낸 다이아는 레이드 참석자 중 <b class="hl">그 템에 지원하지 않은 사람</b>끼리 똑같이 나눠요.</span></div></li></ol>';
+  // 3) 예시
+  var P = function(n, c){ return '<span class="r-p ' + c + '">' + n + '</span>'; };
+  h += '<div class="r-h">예시로 보면</div><div class="r-ex">' +
+    '<div class="r-ex-item"><span class="r-ex-k">드랍</span><span><b>T5 장비</b> · 거래소 시세 10,000 다이아 → 구매가 <b class="g">2,000 다이아</b></span></div>' +
+    '<div class="r-ex-grp"><div><span class="r-ex-k">지원함</span><div class="r-ps">' + P("A", "buy") + P("B", "buy") + '</div></div><div><span class="r-ex-k">지원 안 함</span><div class="r-ps">' + P("C", "dia") + P("D", "dia") + P("E", "dia") + P("F", "dia") + '</div></div></div>' +
+    '<ul class="r-ex-res">' +
+    '<li>' + P("A", "buy") + '<span><b>주사위 당첨</b> → T5 장비를 받고 2,000 다이아를 내요.</span></li>' +
+    '<li>' + P("B", "buy") + '<span><b>주사위 탈락</b> → 장비도, 다이아 분배도 <b class="r">없어요</b>.</span></li>' +
+    '<li><span class="r-ps">' + P("C", "dia") + P("D", "dia") + P("E", "dia") + P("F", "dia") + '</span><span>A가 낸 2,000 다이아를 나눠서 <b class="g">각 500 다이아</b>를 받아요.</span></li>' +
+    '</ul></div>';
+  // 4) 핵심 경고
   h += '<div class="r-warn" role="note"><span class="wi" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18v.5"/></svg></span>' +
-    '<div><div class="wlab">꼭 확인하세요</div><p class="wt">구매에 지원한 템은<br><em>그 템의 다이아 분배를 못 받아요</em></p>' +
-    '<p class="ws">뽑기 · 주사위에서 <b>떨어져도 똑같이 제외</b>돼요. 지원하지 않은 다른 템의 분배는 그대로 받아요.</p></div></div>';
-  h += '<div class="r-price"><div class="lb">드랍된 아이템 · 스킬 구매 가격</div><p class="big">시세의 <em>20%</em> 고정가</p>' +
+    '<div><div class="wlab">꼭 기억하세요</div><p class="wt">지원한 템은<br><em>떨어져도 그 템의 분배를 못 받아요</em></p>' +
+    '<p class="ws">예시의 <b>B</b>처럼요. 지원하지 않은 다른 템의 분배는 그대로 받아요.</p></div></div>';
+  // 5) 선택 비교
+  h += '<div class="r-choice"><h3>템마다 골라요: 이 템, 지원할까?</h3><p class="sub">한 템에 대해서는 <b>둘 중 하나만</b> 고를 수 있어요. 눌러서 비교해 보세요.</p>' +
+    '<div class="r-opts" role="group" aria-label="선택"><button class="r-opt buy" data-g="rc" data-v="buy" aria-pressed="' + (gRaidChoice === "buy") + '">이 템 구매에 지원<small>살 기회를 갖기</small></button>' +
+    '<button class="r-opt dia" data-g="rc" data-v="dia" aria-pressed="' + (gRaidChoice === "dia") + '">이 템은 지원 안 함<small>다이아 분배 받기</small></button><span class="r-or" aria-hidden="true">또는</span></div>' +
+    '<div id="gRaidRes">' + gRaidChoiceHtml() + '</div></div>';
+  // 6) 가격 정하는 법
+  h += '<div class="r-h">가격 정하는 법</div><div class="r-price"><p class="big">시세의 <em>20%</em> 고정가</p>' +
     '<div class="r-case a"><div class="ch"><span class="ab">A</span><span class="ct">거래소에 있는 템</span></div><div class="cd"><b>거래소 시세</b>의 20%로 구매해요.</div>' +
     '<div class="r-calc"><div><label for="gf-mkt">거래소 시세 넣어 보기</label><div class="in"><input class="field" id="gf-mkt" inputmode="numeric" autocomplete="off" value="' + esc(gRaidMkt) + '"><span class="unit">다이아</span></div></div>' +
     '<div class="out"><span class="ol">길드 구매가</span><div class="v num" id="gRaidOut" aria-live="polite">' + gRaidPrice() + '<small>다이아</small></div></div></div>' +
     '<div class="r-quick" role="group" aria-label="예시 시세"><button data-g="rq" data-v="10000">T5 장비 예시 · 1만</button><button data-g="rq" data-v="5000">5천</button><button data-g="rq" data-v="30000">3만</button></div></div>' +
     '<div class="r-case b"><div class="ch"><span class="ab">B</span><span class="ct">거래소에 없는 템</span></div><div class="cd"><b>운영진 판단하에 시세를 결정</b>하고, 그 시세의 20%로 구매해요. 정해진 시세는 드랍 공개 때 함께 알려드려요.</div></div></div>';
-  h += '<ol class="r-steps">' +
-    '<li><span class="n">1</span><div><b>아이템 · 스킬 드랍</b><span>' + (when ? esc(when) + ' 레이드가 끝나면' : '레이드가 끝나면') + ' 드랍된 템을 공개해요. 거래소에 없는 템은 운영진이 시세를 정해요.</span></div></li>' +
-    '<li class="warn"><span class="n">2</span><div><b>구매 희망자 지원</b><span><b class="hl">수요일 01:00부터 수요일 하루 동안</b> 템마다 지원을 받아요.</span><br><span class="tag">⚠ 지원한 템은 당첨과 상관없이 그 템의 다이아 분배 제외</span></div></li>' +
-    '<li><span class="n">3</span><div><b>구매자 결정</b><span>템마다 지원자 중 뽑기 · 주사위로 정해요.</span></div></li>' +
-    '<li><span class="n">4</span><div><b>20% 고정가로 구매</b><span>당첨자가 시세의 20% 다이아를 내고 가져가요.</span></div></li></ol>';
-  h += '<div class="r-choice"><h3>템마다 골라요: 이 템, 지원할까?</h3><p class="sub">한 템에 대해서는 <b>둘 중 하나만</b> 고를 수 있어요. 눌러서 비교해 보세요.</p>' +
-    '<div class="r-opts" role="group" aria-label="선택"><button class="r-opt buy" data-g="rc" data-v="buy" aria-pressed="' + (gRaidChoice === "buy") + '">이 템 구매에 지원<small>살 기회를 갖기</small></button>' +
-    '<button class="r-opt dia" data-g="rc" data-v="dia" aria-pressed="' + (gRaidChoice === "dia") + '">이 템은 지원 안 함<small>다이아 분배 받기</small></button><span class="r-or" aria-hidden="true">또는</span></div>' +
-    '<div id="gRaidRes">' + gRaidChoiceHtml() + '</div></div>';
+  // 7) 자주 묻는 질문
   h += '<div class="r-faq"><h3>자주 묻는 질문</h3>' +
     gRaidFaqItem("multi", "템이 여러 개 나오면 어떻게 되나요?", '템마다 따로예요. <b>지원한 템의 분배에서만 제외</b>되고, 지원하지 않은 템의 다이아 분배는 그대로 받아요.') +
     gRaidFaqItem("fail", "주사위에서 떨어지면 그 템 분배를 받을 수 있나요?", '아니요. 지원한 순간 그 템의 <b>구매 기회를 가진 것</b>으로 보기 때문에, 당첨되지 않아도 그 템의 다이아 분배에서는 제외돼요.') +
