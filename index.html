@@ -470,6 +470,9 @@ footer .contact{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,2
 .lock-body{padding:30px 22px 22px}
 .lock-ic{width:64px;height:64px;margin:0 auto 16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,59,48,.16);border:2px solid #ff3b30}
 .lock-msg{margin:0;font-size:clamp(23px,6.4vw,30px);line-height:1.3;font-weight:900;letter-spacing:-.03em;color:#ff4d42;word-break:keep-all}
+.lock-note{margin:6px 0 0;font-size:17px;font-weight:800;color:#ffd2c8;word-break:keep-all}
+.lock-note[hidden]{display:none}
+.lock-warn{text-wrap:balance}
 .lock-sub{margin:12px auto 0;display:inline-block;padding:6px 16px;border-radius:999px;font-size:15px;font-weight:900;color:#fff;background:rgba(255,59,48,.25);border:1px solid rgba(255,59,48,.6)}
 .lock-warn{margin:16px 0 0;font-size:13px;color:#e8b4ae;word-break:keep-all}
 .lock-admin{margin-top:22px;background:none;border:none;color:rgba(255,200,195,.55);font-size:12px;text-decoration:underline;text-underline-offset:3px;min-height:36px;padding:0 10px}
@@ -809,6 +812,19 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 .g-raidcard small{font-size:12.5px;color:var(--muted)}
 .g-raidcard .ar{color:var(--gold-hi);font-weight:900}
 
+
+/* 공지 게시판 */
+.n-board h4.sep{margin-top:4px;padding-top:12px;border-top:1px solid rgba(255,235,200,.1)}
+.n-board h4.sep + .g-old{border-top:none}
+.n-tag{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:6px;font-size:11px;font-weight:900;vertical-align:1px}
+.n-tag.pin{background:rgba(156,196,239,.14);color:#9cc4ef;border:1px solid rgba(156,196,239,.4)}
+.n-tag.guide{background:var(--gold);color:#1d1408;border:1px solid transparent}
+.g-old-h .d.lab{color:var(--gold);font-weight:700}
+.n-detail h3:focus{outline:none}
+.n-guide-d{display:flex;flex-direction:column;gap:12px}
+.n-dh{display:flex;flex-direction:column;gap:6px;padding:0 4px}
+.n-dh .n-tag{align-self:flex-start}
+.n-dh h3{margin:0;font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--cream)}
 </style>
 </head>
 <body>
@@ -825,6 +841,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
     <div class="lock-body">
       <div class="lock-ic" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff4d42" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M5.3 5.3l13.4 13.4"/></svg></div>
       <p class="lock-msg" id="lockMsg">모든 필드 보스 통제 중</p>
+      <p class="lock-note" id="lockNote">(심연의 틈 제외)</p>
       <div class="lock-sub" id="lockSub">별도 공지 시까지</div>
       <p class="lock-warn">통제가 풀릴 때까지 필드 보스에 절대 들어가지 마세요.</p>
       <p class="lock-warn lock-nav">공지사항 · 일정 · 꿀팁은 아래 메뉴에서 볼 수 있어요.</p>
@@ -839,7 +856,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-14 02:00"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-14 02:20"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 /* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
@@ -862,7 +879,9 @@ var IC_CAL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke
 var IC_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>';
 
 var state = JSON.parse(document.getElementById("boss-state").textContent);
-var LOCK_MAIN = "모든 필드 보스 통제 중", LOCK_SUB = "별도 공지 시까지";
+var LOCK_MAIN = "모든 필드 보스 통제 중", LOCK_SUB = "별도 공지 시까지", LOCK_NOTE = "(심연의 틈 제외)";
+// 예외 문구: 저장된 적 없으면 기본값, 관리자가 비워서 저장하면 표시 안 함
+function lockNote(L){ return typeof L.note === "string" ? L.note.trim() : LOCK_NOTE; }
 function migrate(st){
   // 통제 설정이 아직 저장된 적 없으면 기본은 "켜짐" (관리자가 해제해야 꺼짐)
   if (!st.lockdown || typeof st.lockdown.on !== "boolean") st.lockdown = { on: true, main: LOCK_MAIN, sub: LOCK_SUB };
@@ -1141,9 +1160,10 @@ function render(){
     setTimeout(checkBuild, 0);
     var L = state.lockdown, SL = savedLock();
     h += '<div class="lock-card' + (L.on ? ' on' : '') + '"><div class="lock-head"><div><div class="lock-title">필드 보스 통제 팝업</div>';
-    h += '<div class="lock-state">' + (SL.on ? '현재 길드원 화면: 팝업 표시 중' : '현재 길드원 화면: 팝업 없음') + (L.on !== SL.on || L.main !== SL.main || L.sub !== SL.sub ? ' · 저장 안 된 변경 있음' : '') + '</div></div>';
+    h += '<div class="lock-state">' + (SL.on ? '현재 길드원 화면: 팝업 표시 중' : '현재 길드원 화면: 팝업 없음') + (L.on !== SL.on || L.main !== SL.main || L.sub !== SL.sub || lockNote(L) !== lockNote(SL) ? ' · 저장 안 된 변경 있음' : '') + '</div></div>';
     h += '<button class="sw" role="switch" aria-checked="' + L.on + '" data-act="locktoggle"><span class="knob"></span>' + (L.on ? '켜짐' : '꺼짐') + '</button></div>';
     h += '<div><label class="lbl-s" for="lockMain">팝업 큰 문구</label><input class="field" id="lockMain" data-lock="main" maxlength="40" value="' + esc(L.main) + '"></div>';
+    h += '<div><label class="lbl-s" for="lockNoteIn">예외 문구 (큰 문구 바로 아래 · 비우면 표시 안 함)</label><input class="field" id="lockNoteIn" data-lock="note" maxlength="40" placeholder="예: (심연의 틈 제외)" value="' + esc(lockNote(L)) + '"></div>';
     h += '<div><label class="lbl-s" for="lockSubIn">팝업 작은 문구</label><input class="field" id="lockSubIn" data-lock="sub" maxlength="30" value="' + esc(L.sub) + '"></div>';
     h += '<div class="line"><button class="btn primary" data-act="save">변경사항 저장</button><button class="btn" data-act="lockpreview">길드원 화면 미리보기</button></div>';
     h += '<p class="hint">스위치를 켜거나 끈 뒤 <b>변경사항 저장</b>을 누르면 모든 길드원 화면에 바로 반영됩니다. 관리자 화면은 가려지지 않아요.</p></div>';
@@ -1205,6 +1225,9 @@ function renderLock(){
   var mt = (L.main || "").trim() || LOCK_MAIN, st = (L.sub || "").trim() || LOCK_SUB;
   if (m.textContent !== mt) m.textContent = mt;
   if (s.textContent !== st) s.textContent = st;
+  var ne = document.getElementById("lockNote"), nt = lockNote(L);
+  if (ne.textContent !== nt) ne.textContent = nt;
+  ne.hidden = !nt;
   if (lockEl.hidden === show) lockEl.hidden = !show;
   document.getElementById("lockAdmin").hidden = admin;
   document.getElementById("lockExit").hidden = !(admin && lockPreview);
@@ -1905,7 +1928,7 @@ function gRenderNav(){
 }
 function gSetView(v){
   if (!V_ORDER[v]) return;
-  gView = v; gMenuOpen = false;
+  gView = v; gMenuOpen = false; gNDetail = null;
   app.hidden = v !== "boss";
   Object.keys(gViewEl).forEach(function(key){ gViewEl[key].hidden = key !== v; });
   gMarkSeen();
@@ -1980,48 +2003,69 @@ function gLinkify(t){
 function gNoticeFoot(p){
   return '<div class="g-foot">' + gLikeBtn("n", p) + (admin ? '<button class="g-pinbtn" data-g="pin" data-id="' + esc(p.id) + '" aria-pressed="' + !!p.pinned + '">' + (p.pinned ? '고정 해제' : '📌 고정하기') + '</button>' + gDelBtn("n", p.id) : '') + '</div>';
 }
-function gNoticeHead(){ return admin && !gForms.notice ? '<div class="g-bar"><span></span><button class="btn primary" data-g="write" data-k="notice">+ 공지 작성</button></div>' : ''; }
+function gNoticeHead(){
+  if (gNDetail) return '<div class="g-bar"><button class="btn" data-g="nback">← 공지 목록</button></div>';
+  return admin && !gForms.notice ? '<div class="g-bar"><span></span><button class="btn primary" data-g="write" data-k="notice">+ 공지 작성</button></div>' : '';
+}
 function gNoticeForm(){
-  var d = gForms.notice; if (!d) return '';
+  var d = gForms.notice; if (!d || gNDetail) return '';
   return '<section class="g-form" aria-label="공지 작성"><h3>새 공지 작성</h3>' +
     gField("notice", "title", "제목", true, "input", 'maxlength="60"', d.title, d.errs.title) +
     gField("notice", "body", "내용", true, "textarea", 'maxlength="3000" rows="6"', d.body, d.errs.body) +
     gField("notice", "author", "작성자", true, "input", 'maxlength="20" autocomplete="nickname"', d.author, d.errs.author) +
     '<p class="g-hint">공지 시각은 <b>공지하기를 누른 순간</b>으로 초 단위까지 기록돼요. 내용에 주소(https://…)를 쓰면 자동으로 링크가 돼요.</p>' + gActs("notice", "공지하기", d.busy) + '</section>';
 }
+/* 게시판: 최신 공지 1개는 크게, 나머지(고정 · 이전 공지)는 한 줄 목록 → 누르면 글 보기 화면 */
+var gNDetail = null; // null(목록) | "raid"(분배 안내글) | 공지 id
+function gNRow(p){
+  return '<div class="g-old"><button class="g-old-h" data-g="nopen" data-id="' + esc(p.id) + '"><span class="d num">' + gMD(p.at) + '</span><span class="tt">' +
+    (p.pinned ? '<span class="n-tag pin">고정</span>' : '') + esc(p.title) + '</span><span class="lk num" aria-label="좋아요 ' + p.likes + '개">♥ ' + p.likes + '</span><span class="cv" aria-hidden="true">›</span></button></div>';
+}
 function gNoticeList(){
-  var h = '', pins = [], rest = [];
+  if (gNDetail) return gNoticeDetail();
+  var pins = [], rest = [];
   gNotices.forEach(function(p){ (p.pinned ? pins : rest).push(p); });
   pins.sort(function(a, b){ return b.pinAt - a.pinAt; });
-  h += '<section class="n-pins" aria-label="고정 공지"><h3><span class="pi">' + G_IC_PIN + '</span>고정 공지 ' + (pins.length + 1) + '</h3>';
-  // 1) 길드 레이드 분배 방식: 항상 맨 위에 고정된 안내글
-  h += '<article class="n-guide" id="raid"><button class="n-pin-h" data-g="guide" aria-expanded="' + gGuideOpen + '"><span class="pi">' + G_IC_PIN + '</span><span class="tx"><span class="lab">안내</span><span class="tt">길드 레이드 분배 방식</span>' +
-    '<span class="pv">⚠ 구매에 지원한 템은 당첨과 상관없이 그 템의 다이아 분배 제외 · 시세의 20% 고정가</span></span><span class="cv" aria-hidden="true">›</span></button>' +
-    (gGuideOpen ? '<div class="n-guide-b">' + gRaidGuide() + '</div>' : '') + '</article>';
-  // 2) 관리자가 고정한 공지
-  pins.forEach(function(p){
-    var o = !!gOpenOld[p.id];
-    h += '<article class="n-pin"><button class="n-pin-h" data-g="old" data-id="' + esc(p.id) + '" aria-expanded="' + o + '"><span class="pi">' + G_IC_PIN + '</span><span class="tx"><span class="tt">' + esc(p.title) + '</span><span class="pv">' + esc(p.body) + '</span></span><span class="cv" aria-hidden="true">›</span></button>';
-    if (o) h += '<div class="n-pin-b"><p class="g-body">' + gLinkify(p.body) + '</p><div class="g-meta"><span>공지 <b class="num">' + gStamp(p.at) + '</b></span><span>작성자 <b>' + esc(p.author) + '</b></span></div>' + gNoticeFoot(p) + '</div>';
-    h += '</article>';
-  });
-  h += '</section>';
-  var st = gStatus("notice", "아직 일반 공지가 없어요.", rest); if (st) return h + st;
-  var p = rest[0];
-  h += '<article class="g-latest"><span class="g-tag">최신 공지</span><h3>' + esc(p.title) + '</h3><p class="g-body">' + gLinkify(p.body) + '</p>' +
-    '<div class="g-meta"><span>공지 <b class="num">' + gStamp(p.at) + '</b></span><span>작성자 <b>' + esc(p.author) + '</b></span></div>' + gNoticeFoot(p) + '</article>';
-  if (rest.length > 1) {
-    h += '<section class="g-olds glass"><h4>이전 공지 ' + (rest.length - 1) + '개</h4>';
-    rest.slice(1).forEach(function(q){
-      var o = !!gOpenOld[q.id];
-      h += '<div class="g-old"><button class="g-old-h" data-g="old" data-id="' + esc(q.id) + '" aria-expanded="' + o + '"><span class="d num">' + gMD(q.at) + '</span><span class="tt">' + esc(q.title) + '</span><span class="lk num" aria-label="좋아요 ' + q.likes + '개">♥ ' + q.likes + '</span><span class="cv" aria-hidden="true">›</span></button>';
-      if (o) h += '<div class="g-old-b"><p class="g-body">' + gLinkify(q.body) + '</p><div class="g-meta"><span>공지 <b class="num">' + gStamp(q.at) + '</b></span><span>작성자 <b>' + esc(q.author) + '</b></span></div>' + gNoticeFoot(q) + '</div>';
-      h += '</div>';
-    });
-    h += '</section>';
+  var h = '', st = gStatus("notice", "", null);
+  if (st) h += st;
+  else if (rest.length) {
+    var p = rest[0];
+    h += '<article class="g-latest"><span class="g-tag">📌 최신 공지</span><h3>' + esc(p.title) + '</h3><p class="g-body">' + gLinkify(p.body) + '</p>' +
+      '<div class="g-meta"><span>공지 <b class="num">' + gStamp(p.at) + '</b></span><span>작성자 <b>' + esc(p.author) + '</b></span></div>' + gNoticeFoot(p) + '</article>';
   }
+  h += '<section class="g-olds glass n-board" aria-label="공지 목록"><h4>고정 공지 ' + (pins.length + 1) + '개</h4>';
+  h += '<div class="g-old"><button class="g-old-h" data-g="nopen" data-id="raid"><span class="d lab">안내</span><span class="tt"><span class="n-tag guide">고정</span>길드 레이드 분배 방식</span><span class="cv" aria-hidden="true">›</span></button></div>';
+  pins.forEach(function(q){ h += gNRow(q); });
+  if (rest.length > 1) {
+    h += '<h4 class="sep">이전 공지 ' + (rest.length - 1) + '개</h4>';
+    rest.slice(1).forEach(function(q){ h += gNRow(q); });
+  }
+  h += '</section>';
+  if (!st && !gNotices.length) h += '<p class="g-soft">아직 작성된 공지가 없어요.</p>';
   return h;
 }
+function gNoticeDetail(){
+  if (gNDetail === "raid") {
+    return '<article class="n-detail n-guide-d" id="raid"><div class="n-dh"><span class="n-tag guide">고정 · 안내</span><h3 tabindex="-1">길드 레이드 분배 방식</h3></div>' + gRaidGuide() + '</article>';
+  }
+  var p = null; gNotices.forEach(function(x){ if (x.id === gNDetail) p = x; });
+  if (!p) return '<div class="g-empty">삭제되었거나 찾을 수 없는 공지예요.</div>';
+  return '<article class="g-latest n-detail">' + (p.pinned ? '<span class="g-tag">📌 고정 공지</span>' : '') + '<h3 tabindex="-1">' + esc(p.title) + '</h3><p class="g-body">' + gLinkify(p.body) + '</p>' +
+    '<div class="g-meta"><span>공지 <b class="num">' + gStamp(p.at) + '</b></span><span>작성자 <b>' + esc(p.author) + '</b></span></div>' + gNoticeFoot(p) + '</article>';
+}
+function gOpenNotice(id){
+  gNDetail = id;
+  try { history.pushState({ gd: 1 }, ""); } catch (e) {}
+  gRenderView(); window.scrollTo(0, 0);
+  var t = gViewEl.notice.querySelector(".n-detail h3"); if (t) t.focus({ preventScroll: true });
+}
+function gCloseNotice(){
+  if (history.state && history.state.gd) { history.back(); return; }
+  gNDetail = null; gRenderView(); window.scrollTo(0, 0);
+}
+window.addEventListener("popstate", function(){
+  if (gNDetail !== null && gView === "notice") { gNDetail = null; gRenderView(); window.scrollTo(0, 0); }
+});
 
 /* 꿀팁 */
 function gTipsHead(){
@@ -2111,7 +2155,7 @@ function gSchedList(){
   h += '<div class="chap-h"><span class="ic">' + G_IC_CAL + '</span><div class="tx"><div class="k">SCHEDULE</div><h2 id="weekTitle">이번 주 일정</h2><div class="sub">' + gWeekMD(0) + ' (월) ~ ' + gWeekMD(6) + ' (일)</div></div></div>';
   h += '<div class="chap-tools"><label class="g-chk"><input type="checkbox" data-g="showboss"' + (gShowBoss ? ' checked' : '') + '>고정 보스 같이 보기</label>' +
     (admin && !gForms.schedule && gIntroEdit === null ? '<button class="btn primary" data-g="write" data-k="schedule">+ 일정 추가</button>' : '') + '</div>';
-  if (gShowBoss && savedLock().on) h += '<div class="g-lockline">⛔ 지금은 모든 필드 보스 통제 중이에요. 보스 일정은 참고만 해 주세요.</div>';
+  if (gShowBoss && savedLock().on) { var lnote = lockNote(savedLock()); h += '<div class="g-lockline">⛔ 지금은 모든 필드 보스 통제 중이에요' + (lnote ? ' ' + esc(lnote) : '') + '. 보스 일정은 참고만 해 주세요.</div>'; }
   if (!gSched.events.length) h += '<p class="g-soft">아직 등록된 길드 일정이 없어요.' + (admin ? ' <b>+ 일정 추가</b>로 넣어 주세요.' : '') + '</p>';
   h += '<div class="g-wk glass">' + G_DAYS.map(function(d, i){
     var list = gEventsOn(i), cls = "wk-day" + (i === t ? " today" : "") + (i === 5 ? " sat" : "") + (i === 6 ? " sun" : "") + (list.length ? "" : " is-empty");
@@ -2123,7 +2167,7 @@ function gSchedList(){
 }
 
 /* ---------- 길드 레이드 분배 방식 (공지사항 고정 안내글) ---------- */
-var gGuideOpen = false, gRaidChoice = "buy", gRaidMkt = "10,000", gRaidFaq = {};
+var gRaidChoice = "buy", gRaidMkt = "10,000", gRaidFaq = {};
 function gRaidWhen(){
   var r = null;
   gSched.events.forEach(function(e){ if (!r && /레이드/.test(e.title) && !/분배|지원/.test(e.title)) r = e; });
@@ -2176,9 +2220,8 @@ function gRaidGuide(){
   return h;
 }
 function gGoRaid(){
-  gGuideOpen = true;
-  if (gView !== "notice") gSetView("notice"); else gRenderView(true);
-  setTimeout(function(){ var g = document.getElementById("raid"); if (g) g.scrollIntoView({ block: "start" }); }, 30);
+  if (gView !== "notice") gSetView("notice");
+  gOpenNotice("raid");
 }
 
 /* ---------- 저장 ---------- */
@@ -2280,16 +2323,16 @@ Object.keys(gViewEl).forEach(function(key){
       if (!admin) return;
       var col = kk === "n" ? "notices" : "tips";
       openPanel('<h3>이 글을 삭제할까요?</h3><p class="hint">삭제하면 모든 길드원 화면에서 사라지고 되돌릴 수 없어요.</p>', "삭제", function(){
-        gRemove(col, id).then(function(){ toast("삭제했어요.", "ok"); }, function(err){ toast(gErrMsg(err), "bad"); });
+        gRemove(col, id).then(function(){ toast("삭제했어요.", "ok"); if (col === "notices" && gNDetail === id) gCloseNotice(); }, function(err){ toast(gErrMsg(err), "bad"); });
       });
       return;
     }
-    if (g === "old") { gOpenOld[id] = !gOpenOld[id]; gRenderView(true); return gRefocus('[data-g="old"][data-id="' + id + '"]'); }
     if (g === "sort") { gTipSort = b.getAttribute("data-v"); gRenderView(true); return gRefocus('[data-g="sort"][data-v="' + gTipSort + '"]'); }
     if (g === "addlink") { gForms.tips.links.push(""); gRenderForm(); var ls = el.querySelectorAll("[data-gl]"); if (ls.length) ls[ls.length - 1].focus(); return; }
     if (g === "rmlink") { gForms.tips.links.splice(+b.getAttribute("data-i"), 1); gForms.tips.errs = {}; return gRenderForm(); }
     if (g === "raid") { e.preventDefault(); return gGoRaid(); }
-    if (g === "guide") { gGuideOpen = !gGuideOpen; gRenderView(true); return gRefocus('[data-g="guide"]'); }
+    if (g === "nopen") return gOpenNotice(id);
+    if (g === "nback") return gCloseNotice();
     if (g === "rq") { gRaidMkt = (+b.getAttribute("data-v")).toLocaleString("ko-KR"); var mi = document.getElementById("gf-mkt"); if (mi) mi.value = gRaidMkt; var ro = document.getElementById("gRaidOut"); if (ro) ro.innerHTML = gRaidPrice() + '<small>다이아</small>'; return; }
     if (g === "rc") {
       gRaidChoice = b.getAttribute("data-v");
@@ -2350,8 +2393,8 @@ window.addEventListener("beforeunload", function(e){
   if (busy) { e.preventDefault(); e.returnValue = ""; }
 });
 
-/* 첫 화면 (…/boss/#raid 로 들어오면 공지의 분배 방식 안내글을 펼쳐서 보여줌) */
-if (location.hash === "#raid") { gGuideOpen = true; setTimeout(function(){ var g = document.getElementById("raid"); if (g) g.scrollIntoView({ block: "start" }); }, 60); }
+/* 첫 화면 (…/boss/#raid 로 들어오면 공지의 분배 방식 안내글을 바로 보여줌) */
+if (location.hash === "#raid") gNDetail = "raid";
 app.hidden = gView !== "boss";
 Object.keys(gViewEl).forEach(function(key){ gViewEl[key].hidden = key !== gView; });
 if (gView !== "boss") gRenderView();
