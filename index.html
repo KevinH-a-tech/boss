@@ -699,7 +699,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 .r-res .r-cmp{list-style:none;margin:0;padding:0}
 .r-cmp li{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed rgba(255,235,200,.1);font-size:14px;color:#d9cfbd;word-break:keep-all}
 .r-cmp li:first-child{border-top:none;padding-top:2px}
-.r-cmp .k2{flex:none;width:78px;font-size:12.5px;color:var(--muted);font-weight:700}
+.r-cmp .k2{flex:none;width:96px;word-break:keep-all;font-size:12.5px;color:var(--muted);font-weight:700}
 .r-cmp .ox{flex:none;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900}
 .r-cmp .ox.o{background:rgba(127,200,150,.18);color:#9fdcb2;border:1px solid rgba(127,200,150,.5)}
 .r-cmp .ox.x{background:#ff6b4a;color:#1f0a06}
@@ -831,6 +831,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 .r-sum{padding:18px;border-radius:22px;border:1px solid rgba(227,178,94,.45);background:linear-gradient(170deg,#2a2216,#17140f)}
 .r-lab{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11.5px;font-weight:900;color:#1d1408;background:var(--gold)}
 .r-sum p{margin:10px 0 0;font-size:18px;font-weight:700;line-height:1.55;color:var(--cream);word-break:keep-all}
+.r-sum p,.r-warn .wt{text-wrap:balance}
 .r-sum p b{color:var(--gold-hi)}
 .r-steps li.gold{margin:4px -10px;padding:12px 10px;border-radius:16px;background:rgba(227,178,94,.08);box-shadow:inset 0 0 0 1px rgba(227,178,94,.4)}
 .r-steps li.warn + li,.r-steps li.gold{border-top-color:transparent}
@@ -851,6 +852,21 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 .r-ex-res li > .r-ps{flex:none;max-width:72px}
 .r-ex-res li > .r-ps .r-p{width:26px;height:26px;font-size:12.5px}
 .r-ex-res b{color:var(--cream)}
+
+/* 꿀팁 게시판 */
+.t-row .tt{display:flex;flex-direction:column;gap:1px}
+.t-row .t-tt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t-row .t-sub{font-size:12px;font-weight:500;color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.t-nb{display:flex;align-items:center;gap:10px;min-height:64px;padding:10px 14px;border-radius:18px;border:1px solid var(--line);background:rgba(255,235,200,.04);color:var(--cream);text-align:left;min-width:0}
+.t-nb.next{flex-direction:row-reverse;text-align:right}
+.t-nb .ar{flex:none;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#1d1408;background:linear-gradient(180deg,#ecc276,#d4a252)}
+.t-nb .tx{min-width:0;display:flex;flex-direction:column}
+.t-nb small{font-size:11.5px;font-weight:700;color:var(--muted)}
+.t-nb b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t-nb:disabled{opacity:.45;cursor:default}
+.t-nb:disabled .ar{background:rgba(255,235,200,.1);color:var(--faint)}
+.t-pos{margin:-4px 0 0;text-align:center;font-size:12px;color:var(--faint)}
 </style>
 </head>
 <body>
@@ -882,7 +898,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-14 02:30"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-14 02:50"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 /* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
@@ -1954,7 +1970,7 @@ function gRenderNav(){
 }
 function gSetView(v){
   if (!V_ORDER[v]) return;
-  gView = v; gMenuOpen = false; gNDetail = null;
+  gView = v; gMenuOpen = false; gNDetail = null; gTDetail = null;
   app.hidden = v !== "boss";
   Object.keys(gViewEl).forEach(function(key){ gViewEl[key].hidden = key !== v; });
   gMarkSeen();
@@ -2093,13 +2109,16 @@ window.addEventListener("popstate", function(){
   if (gNDetail !== null && gView === "notice") { gNDetail = null; gRenderView(); window.scrollTo(0, 0); }
 });
 
-/* 꿀팁 */
+/* 꿀팁: 게시판 (목록에는 제목 · 작성자 · 좋아요, 내용은 글 보기 화면에서) */
+var gTDetail = null;
+function gTipsSorted(){ return gTips.slice().sort(function(a, b){ return gTipSort === "like" ? (b.likes - a.likes) || (b.at - a.at) : b.at - a.at; }); }
 function gTipsHead(){
+  if (gTDetail) return '<div class="g-bar"><button class="btn" data-g="tback">← 꿀팁 목록</button></div>';
   return '<div class="g-bar"><div class="g-seg" role="group" aria-label="정렬"><button data-g="sort" data-v="new" aria-pressed="' + (gTipSort === "new") + '">최신순</button><button data-g="sort" data-v="like" aria-pressed="' + (gTipSort === "like") + '">좋아요순</button></div>' +
     (gForms.tips ? '' : '<button class="btn primary" data-g="write" data-k="tips">+ 꿀팁 쓰기</button>') + '</div>';
 }
 function gTipsForm(){
-  var d = gForms.tips; if (!d) return '';
+  var d = gForms.tips; if (!d || gTDetail) return '';
   var h = '<section class="g-form" aria-label="꿀팁 쓰기"><h3>꿀팁 쓰기</h3>' +
     gField("tips", "title", "제목", true, "input", 'maxlength="60"', d.title, d.errs.title) +
     gField("tips", "body", "내용", true, "textarea", 'maxlength="2000" rows="5"', d.body, d.errs.body);
@@ -2113,14 +2132,45 @@ function gTipsForm(){
   return h + gActs("tips", "등록하기", d.busy) + '</section>';
 }
 function gTipsList(){
+  if (gTDetail) return gTipDetail();
   var st = gStatus("tips", "첫 꿀팁을 남겨 주세요!", gTips); if (st) return st;
-  var list = gTips.slice().sort(function(a, b){ return gTipSort === "like" ? (b.likes - a.likes) || (b.at - a.at) : b.at - a.at; });
-  return list.map(function(p){
-    var h = '<article class="g-post glass"><h3>' + esc(p.title) + '</h3><p class="g-body">' + esc(p.body) + '</p>';
-    if (p.links.length) h += '<div class="g-links">' + p.links.map(function(u){ return '<a class="g-lnk" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer nofollow">' + G_IC_URL + '<span>' + esc(u.replace(/^https?:\/\//i, "")) + '</span></a>'; }).join("") + '</div>';
-    return h + '<div class="g-meta"><span>작성자 <b>' + esc(p.author) + '</b></span><span class="num">' + gStamp(p.at) + '</span><span>' + gAgo(p.at) + '</span></div><div class="g-foot">' + gLikeBtn("t", p) + gDelBtn("t", p.id) + '</div></article>';
-  }).join("");
+  var list = gTipsSorted();
+  return '<section class="g-olds glass n-board" aria-label="꿀팁 목록"><h4>꿀팁 ' + list.length + '개</h4>' + list.map(function(p){
+    return '<div class="g-old"><button class="g-old-h t-row" data-g="topen" data-id="' + esc(p.id) + '"><span class="d num">' + gMD(p.at) + '</span>' +
+      '<span class="tt"><span class="t-tt">' + esc(p.title) + '</span><small class="t-sub">' + esc(p.author) + ' · ' + gAgo(p.at) + (p.links.length ? ' · 링크 ' + p.links.length + '개' : '') + '</small></span>' +
+      '<span class="lk num" aria-label="좋아요 ' + p.likes + '개">♥ ' + p.likes + '</span><span class="cv" aria-hidden="true">›</span></button></div>';
+  }).join("") + '</section>';
 }
+function gTipDetail(){
+  var list = gTipsSorted(), idx = -1;
+  list.forEach(function(x, i){ if (x.id === gTDetail) idx = i; });
+  if (idx < 0) return '<div class="g-empty">삭제되었거나 찾을 수 없는 꿀팁이에요.</div>';
+  var p = list[idx], prev = list[idx - 1], next = list[idx + 1];
+  var h = '<article class="g-post glass n-detail"><h3 tabindex="-1">' + esc(p.title) + '</h3><p class="g-body">' + esc(p.body) + '</p>';
+  if (p.links.length) h += '<div class="g-links">' + p.links.map(function(u){ return '<a class="g-lnk" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer nofollow">' + G_IC_URL + '<span>' + esc(u.replace(/^https?:\/\//i, "")) + '</span></a>'; }).join("") + '</div>';
+  h += '<div class="g-meta"><span>작성자 <b>' + esc(p.author) + '</b></span><span class="num">' + gStamp(p.at) + '</span><span>' + gAgo(p.at) + '</span></div><div class="g-foot">' + gLikeBtn("t", p) + gDelBtn("t", p.id) + '</div></article>';
+  var nb = function(q, dir){
+    if (!q) return '<button class="t-nb ' + dir + '" disabled><span class="ar" aria-hidden="true">' + (dir === "prev" ? "‹" : "›") + '</span><span class="tx"><small>' + (dir === "prev" ? "이전 글" : "다음 글") + '</small><b>' + (dir === "prev" ? "첫 글이에요" : "마지막 글이에요") + '</b></span></button>';
+    return '<button class="t-nb ' + dir + '" data-g="tgo" data-id="' + esc(q.id) + '" aria-label="' + (dir === "prev" ? "이전 글: " : "다음 글: ") + esc(q.title) + '"><span class="ar" aria-hidden="true">' + (dir === "prev" ? "‹" : "›") + '</span><span class="tx"><small>' + (dir === "prev" ? "이전 글" : "다음 글") + '</small><b>' + esc(q.title) + '</b></span></button>';
+  };
+  h += '<nav class="t-nav" aria-label="다른 꿀팁">' + nb(prev, "prev") + nb(next, "next") + '</nav>';
+  h += '<p class="t-pos num">' + (gTipSort === "like" ? "좋아요순" : "최신순") + ' · ' + (idx + 1) + ' / ' + list.length + '</p>';
+  return h;
+}
+function gOpenTip(id){
+  var first = gTDetail === null;
+  gTDetail = id;
+  if (first) { try { history.pushState({ gd: 1 }, ""); } catch (e) {} }
+  gRenderView(); window.scrollTo(0, 0);
+  var t = gViewEl.tips.querySelector(".n-detail h3"); if (t) t.focus({ preventScroll: true });
+}
+function gCloseTip(){
+  if (history.state && history.state.gd) { history.back(); return; }
+  gTDetail = null; gRenderView(); window.scrollTo(0, 0);
+}
+window.addEventListener("popstate", function(){
+  if (gTDetail !== null && gView === "tips") { gTDetail = null; gRenderView(); window.scrollTo(0, 0); }
+});
 
 /* 일정 */
 function gBossOn(dayIdx){
@@ -2204,8 +2254,8 @@ function gRaidChoiceHtml(){
   return gRaidChoice === "buy"
     ? '<div class="r-res buy"><div class="t">이 템을 살 기회를 가져요</div><ul class="r-cmp">' +
       '<li><span class="k2">구매 기회</span>' + ox(1) + '<span>당첨되면 시세의 20%에 구매</span></li>' +
-      '<li class="hot"><span class="k2">이 템 분배</span>' + ox(0) + '<span>이 템의 다이아 분배 없음</span></li>' +
-      '<li class="hot"><span class="k2">떨어지면?</span>' + ox(0) + '<span>그래도 이 템 분배 없음</span></li>' +
+      '<li class="hot"><span class="k2">다이아 분배</span>' + ox(0) + '<span>이 템의 다이아 분배 없음</span></li>' +
+      '<li class="hot"><span class="k2">구매 당첨에서 떨어지면?</span>' + ox(0) + '<span>그래도 이 템 분배 없음</span></li>' +
       '<li><span class="k2">다른 템 분배</span>' + ox(1) + '<span>지원 안 한 템은 그대로 받음</span></li></ul></div>'
     : '<div class="r-res dia"><div class="t">이 템의 다이아를 분배 받아요</div><ul class="r-cmp">' +
       '<li><span class="k2">구매 기회</span>' + ox(0) + '<span>이 템은 구매할 수 없음</span></li>' +
@@ -2219,12 +2269,12 @@ function gRaidFaqItem(id, q, a){
 function gRaidGuide(){
   var when = gRaidWhen(), h = '';
   // 1) 3초 요약
-  h += '<div class="r-sum"><div class="r-lab">3초 요약</div><p>레이드 템은 원하는 사람이 <b>시세의 20%</b>에 사고, 그 다이아는 <b>지원하지 않은 참석자</b>끼리 나눠요.</p></div>';
+  h += '<div class="r-sum"><div class="r-lab">3초 요약</div><p>레이드 템은 원하는 사람이 지원해서 <b>당첨된 인원이 시세의 20% 금액</b>에 사고,<br>그 다이아는 <b>지원하지 않은 참석자</b>끼리 나눠요.</p></div>';
   // 2) 진행 순서 (5단계)
   h += '<div class="r-h">진행 순서</div><ol class="r-steps">' +
-    '<li><span class="n">1</span><div><b>아이템 · 스킬 드랍</b><span>' + (when ? esc(when) + ' 레이드가 끝나면' : '레이드가 끝나면') + ' 드랍된 템을 공개해요.</span></div></li>' +
-    '<li class="warn"><span class="n">2</span><div><b>구매 지원</b><span><b class="hl">수요일 01:00부터 하루 동안</b>, 사고 싶은 템에 지원해요.</span><br><span class="tag">⚠ 지원한 템은 떨어져도 그 템의 다이아 분배 제외</span></div></li>' +
-    '<li><span class="n">3</span><div><b>구매자 결정</b><span>템마다 지원자 중 뽑기 · 주사위로 1명을 정해요.</span></div></li>' +
+    '<li><span class="n">1</span><div><b>아이템 · 스킬 드랍</b><span>' + (when ? esc(when) + ' 레이드가 끝나면' : '레이드가 끝나면') + ' <b class="hl">차주 수요일 01:00</b>에 드랍된 템이 공개돼요.</span></div></li>' +
+    '<li class="warn"><span class="n">2</span><div><b>구매 지원</b><span><b class="hl">수요일 하루 동안</b>, 사고 싶은 템에 지원해요.</span><br><span class="tag">⚠ 해당 아이템에 지원한 인원은 낙첨되더라도 다이아 분배에서 제외돼요.</span></div></li>' +
+    '<li><span class="n">3</span><div><b>구매자 결정</b><span>아이템마다 지원자 중 뽑기 · 주사위로 1명을 정해요.</span></div></li>' +
     '<li><span class="n">4</span><div><b>시세의 20%로 구매</b><span>당첨자가 시세의 20%만큼 다이아를 내요.</span></div></li>' +
     '<li class="gold"><span class="n">5</span><div><b>다이아 분배</b><span>낸 다이아는 레이드 참석자 중 <b class="hl">그 템에 지원하지 않은 사람</b>끼리 똑같이 나눠요.</span></div></li></ol>';
   // 3) 예시
@@ -2239,8 +2289,7 @@ function gRaidGuide(){
     '</ul></div>';
   // 4) 핵심 경고
   h += '<div class="r-warn" role="note"><span class="wi" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2L12 3z"/><path d="M12 10v5M12 18v.5"/></svg></span>' +
-    '<div><div class="wlab">꼭 기억하세요</div><p class="wt">지원한 템은<br><em>떨어져도 그 템의 분배를 못 받아요</em></p>' +
-    '<p class="ws">예시의 <b>B</b>처럼요. 지원하지 않은 다른 템의 분배는 그대로 받아요.</p></div></div>';
+    '<div><div class="wlab">꼭 기억하세요</div><p class="wt">지원한 아이템은 구매 당첨이 되지 않더라도<br><em>해당 아이템에 대한 다이아 분배를 못 받아요</em></p></div></div>';
   // 5) 선택 비교
   h += '<div class="r-choice"><h3>템마다 골라요: 이 템, 지원할까?</h3><p class="sub">한 템에 대해서는 <b>둘 중 하나만</b> 고를 수 있어요. 눌러서 비교해 보세요.</p>' +
     '<div class="r-opts" role="group" aria-label="선택"><button class="r-opt buy" data-g="rc" data-v="buy" aria-pressed="' + (gRaidChoice === "buy") + '">이 템 구매에 지원<small>살 기회를 갖기</small></button>' +
@@ -2366,7 +2415,7 @@ Object.keys(gViewEl).forEach(function(key){
       if (!admin) return;
       var col = kk === "n" ? "notices" : "tips";
       openPanel('<h3>이 글을 삭제할까요?</h3><p class="hint">삭제하면 모든 길드원 화면에서 사라지고 되돌릴 수 없어요.</p>', "삭제", function(){
-        gRemove(col, id).then(function(){ toast("삭제했어요.", "ok"); if (col === "notices" && gNDetail === id) gCloseNotice(); }, function(err){ toast(gErrMsg(err), "bad"); });
+        gRemove(col, id).then(function(){ toast("삭제했어요.", "ok"); if (col === "notices" && gNDetail === id) gCloseNotice(); if (col === "tips" && gTDetail === id) gCloseTip(); }, function(err){ toast(gErrMsg(err), "bad"); });
       });
       return;
     }
@@ -2375,6 +2424,8 @@ Object.keys(gViewEl).forEach(function(key){
     if (g === "rmlink") { gForms.tips.links.splice(+b.getAttribute("data-i"), 1); gForms.tips.errs = {}; return gRenderForm(); }
     if (g === "raid") { e.preventDefault(); return gGoRaid(); }
     if (g === "nopen") return gOpenNotice(id);
+    if (g === "topen" || g === "tgo") return gOpenTip(id);
+    if (g === "tback") return gCloseTip();
     if (g === "nback") return gCloseNotice();
     if (g === "rq") { gRaidMkt = (+b.getAttribute("data-v")).toLocaleString("ko-KR"); var mi = document.getElementById("gf-mkt"); if (mi) mi.value = gRaidMkt; var ro = document.getElementById("gRaidOut"); if (ro) ro.innerHTML = gRaidPrice() + '<small>다이아</small>'; return; }
     if (g === "rc") {
