@@ -686,7 +686,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-14 03:10"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-21 15:00"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 /* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
@@ -1675,7 +1675,7 @@ var G_IC_MORE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentCo
 var G_IC_HEART = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7C19.5 15.9 12 20.5 12 20.5z"/></svg>';
 var G_IC_URL = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" style="flex:none"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></svg>';
 
-var gEntry = (function(){ var x = (location.hash || "").replace("#", ""); if (x === "raid") return "notice"; return V_ORDER[x] ? x : "boss"; })();
+var gEntry = (function(){ var x = (location.hash || "").replace("#", ""); if (x === "raid" || /^notice-/.test(x)) return "notice"; return V_ORDER[x] ? x : "boss"; })();
 var gView = gEntry, gMenuOpen = false;
 // 통제 팝업이 켜져 있으면, 주소 끝(#…) 없이 들어온 경우(홈 화면 앱 · 기존 링크)는 공지부터 보여줌
 var gAutoEntry = !(location.hash || "").replace("#", ""), gUserNav = false;
@@ -1776,6 +1776,7 @@ function gRenderNav(){
 function gSetView(v){
   if (!V_ORDER[v]) return;
   gView = v; gMenuOpen = false; gNDetail = null; gTDetail = null;
+  if (gNHashDetail()) { try { history.replaceState(null, "", "#" + v); } catch (e) {} }
   app.hidden = v !== "boss";
   Object.keys(gViewEl).forEach(function(key){ gViewEl[key].hidden = key !== v; });
   gMarkSeen();
@@ -1783,8 +1784,12 @@ function gSetView(v){
   window.scrollTo(0, 0);
 }
 function gCopyLink(){
-  var u = location.origin + location.pathname + "#" + gView;
-  var ok = function(){ toast(V_SHORT[gView] + " 링크를 복사했어요.", "ok"); };
+  if (gView === "notice" && gNDetail) return gCopyNotice(gNDetail);
+  gCopyUrl(gView, V_SHORT[gView] + " 링크를 복사했어요.");
+}
+function gCopyUrl(hash, msg){
+  var u = location.origin + location.pathname + "#" + hash;
+  var ok = function(){ toast(msg, "ok"); };
   var fallback = function(){ window.prompt("아래 링크를 복사하세요", u); };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(ok, fallback); else fallback();
 }
@@ -1848,10 +1853,10 @@ function gLinkify(t){
   });
 }
 function gNoticeFoot(p){
-  return '<div class="g-foot">' + gLikeBtn("n", p) + (admin ? '<button class="g-pinbtn" data-g="pin" data-id="' + esc(p.id) + '" aria-pressed="' + !!p.pinned + '">' + (p.pinned ? '고정 해제' : '📌 고정') + '</button><button class="g-del g-edit" data-g="nedit" data-id="' + esc(p.id) + '">수정</button>' + gDelBtn("n", p.id) : '') + '</div>';
+  return '<div class="g-foot">' + gLikeBtn("n", p) + '<button class="g-pinbtn" data-g="ncopy" data-id="' + esc(p.id) + '">🔗 링크 복사</button>' + (admin ? '<button class="g-pinbtn" data-g="pin" data-id="' + esc(p.id) + '" aria-pressed="' + !!p.pinned + '">' + (p.pinned ? '고정 해제' : '📌 고정') + '</button><button class="g-del g-edit" data-g="nedit" data-id="' + esc(p.id) + '">수정</button>' + gDelBtn("n", p.id) : '') + '</div>';
 }
 function gNoticeHead(){
-  if (gNDetail) return '<div class="g-bar"><button class="btn" data-g="nback">← 공지 목록</button></div>';
+  if (gNDetail) return '<div class="g-bar"><button class="btn" data-g="nback">← 공지 목록</button>' + (gNDetail === "raid" ? '<button class="btn" data-g="ncopy" data-id="raid">🔗 링크 복사</button>' : '') + '</div>';
   return admin && !gForms.notice ? '<div class="g-bar"><span></span><button class="btn primary" data-g="write" data-k="notice">+ 공지 작성</button></div>' : '';
 }
 function gNoticeForm(){
@@ -1896,8 +1901,9 @@ function gNoticeDetail(){
   if (gNDetail === "raid") {
     return '<article class="n-detail n-guide-d" id="raid"><div class="n-dh"><span class="n-tag guide">고정 · 안내</span><h3 tabindex="-1">길드 레이드 분배 방식</h3></div>' + gRaidGuide() + '</article>' + gNoticeNav();
   }
-  var p = null; gNotices.forEach(function(x){ if (x.id === gNDetail) p = x; });
-  if (!p) return '<div class="g-empty">삭제되었거나 찾을 수 없는 공지예요.</div>';
+  var p = gNFind(gNDetail);
+  if (!p) return gStatus("notice", "", null) || '<div class="g-empty">삭제되었거나 찾을 수 없는 공지예요.</div>';
+  gNDetail = p.id;
   return '<article class="g-latest n-detail">' + (p.pinned ? '<span class="g-tag">📌 고정 공지</span>' : '') + '<h3 tabindex="-1">' + esc(p.title) + '</h3><p class="g-body">' + gLinkify(p.body) + '</p>' +
     '<div class="g-meta"><span>공지 <b class="num">' + gStamp(p.at) + '</b></span><span>작성자 <b>' + esc(p.author) + '</b></span></div>' + gNoticeFoot(p) + '</article>' + gNoticeNav();
 }
@@ -1921,18 +1927,38 @@ function gNoticeNav(){
   if (idx < 0) return '';
   return gNavPair(seq, idx, "ngo", "공지") + '<p class="t-pos num">공지 ' + (idx + 1) + ' / ' + seq.length + '</p>';
 }
+/* 공지마다 고유 링크: …/boss/#notice-ab12cd (공지 생성 시 만들어지는 문서 id 앞 6자리) · 분배 안내글은 #raid */
+function gNCode(id){ return id === "raid" ? "raid" : "notice-" + String(id).slice(0, 6); }
+function gNHashDetail(){
+  var h = location.hash || "";
+  if (h === "#raid") return "raid";
+  var m = h.match(/^#notice-([A-Za-z0-9_-]+)$/);
+  return m ? m[1] : null;
+}
+function gNFind(code){
+  var p = null;
+  gNotices.forEach(function(x){ if (!p && (x.id === code || x.id.slice(0, 6) === code)) p = x; });
+  return p;
+}
+function gCopyNotice(id){
+  var p = id === "raid" ? null : gNFind(id);
+  gCopyUrl(gNCode(p ? p.id : id), (id === "raid" ? "분배 방식" : "이 공지") + " 링크를 복사했어요.");
+}
 function gOpenNotice(id){
   gNDetail = id;
-  try { history.pushState({ gd: 1 }, ""); } catch (e) {}
+  try { history.pushState({ gd: 1 }, "", "#" + gNCode(id)); } catch (e) {}
   gRenderView(); window.scrollTo(0, 0);
   var t = gViewEl.notice.querySelector(".n-detail h3"); if (t) t.focus({ preventScroll: true });
 }
 function gCloseNotice(){
   if (history.state && history.state.gd) { history.back(); return; }
+  try { history.replaceState(null, "", "#notice"); } catch (e) {}
   gNDetail = null; gRenderView(); window.scrollTo(0, 0);
 }
 window.addEventListener("popstate", function(){
-  if (gNDetail !== null && gView === "notice") { gNDetail = null; gRenderView(); window.scrollTo(0, 0); }
+  if (gView !== "notice") return;
+  var d = gNHashDetail();
+  if (d !== gNDetail) { gNDetail = d; gRenderView(); window.scrollTo(0, 0); }
 });
 
 /* 꿀팁: 게시판 (목록에는 제목 · 작성자 · 좋아요, 내용은 글 보기 화면에서) */
@@ -2334,7 +2360,8 @@ Object.keys(gViewEl).forEach(function(key){
       gForms.notice = { id: ep.id, title: ep.title, body: ep.body, author: ep.author, links: [], errs: {} };
       gRenderView(); window.scrollTo(0, 0); var ft = document.getElementById("gf-notice-title"); if (ft) ft.focus(); return;
     }
-    if (g === "ngo") { gNDetail = id; gRenderView(); window.scrollTo(0, 0); var nt = gViewEl.notice.querySelector(".n-detail h3"); if (nt) nt.focus({ preventScroll: true }); return; }
+    if (g === "ncopy") return gCopyNotice(id);
+    if (g === "ngo") { gNDetail = id; try { history.replaceState(history.state, "", "#" + gNCode(id)); } catch (e) {} gRenderView(); window.scrollTo(0, 0); var nt = gViewEl.notice.querySelector(".n-detail h3"); if (nt) nt.focus({ preventScroll: true }); return; }
     if (g === "topen" || g === "tgo") return gOpenTip(id);
     if (g === "tback") return gCloseTip();
     if (g === "nback") return gCloseNotice();
@@ -2406,8 +2433,8 @@ window.addEventListener("beforeunload", function(e){
   if (busy) { e.preventDefault(); e.returnValue = ""; }
 });
 
-/* 첫 화면 (…/boss/#raid 로 들어오면 공지의 분배 방식 안내글을 바로 보여줌) */
-if (location.hash === "#raid") gNDetail = "raid";
+/* 첫 화면 (…/boss/#raid → 분배 방식 안내글, …/boss/#notice-ab12cd → 그 공지를 바로 보여줌) */
+gNDetail = gNHashDetail();
 app.hidden = gView !== "boss";
 Object.keys(gViewEl).forEach(function(key){ gViewEl[key].hidden = key !== gView; });
 if (gView !== "boss") gRenderView();
