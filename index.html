@@ -686,7 +686,7 @@ textarea.g-in{resize:vertical;min-height:96px;line-height:1.55}
 (function(){
 "use strict";
 var PW = "3383";
-var BUILD = "2026-10-21 15:00"; // 이 파일을 만든 시각 (한국 시간)
+var BUILD = "2026-10-22 02:00"; // 이 파일을 만든 시각 (한국 시간)
 var latestBuild = null, buildChecked = false;
 var M = 60000, H = 3600000, D = 86400000, KST = 9 * H;
 /* 서버 시각 보정: PC마다 시계가 달라도 같은 남은 시간이 나오도록 서버 시각 기준으로 계산 */
@@ -787,9 +787,17 @@ if (LIVE) {
         return fileToB64(f).then(function(d){ return { inlineData: { mimeType: f.type || "image/png", data: d } }; });
       })).then(function(imgs){
         var parts = [{ text: prompt }].concat(imgs), models = (CFG.aiModels || ["gemini-flash-latest"]).slice(), lastErr = null;
+        var busy = function(e){ return e.status === 500 || e.status === 503 || /high demand|overloaded|unavailable|internal/i.test((e.code || "") + " " + (e.message || "")); };
+        var wait = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+        var tryModel = function(name, left){
+          return callModel(name, parts).catch(function(e){
+            if (left > 0 && busy(e)) return wait(left === 2 ? 3000 : 8000).then(function(){ return tryModel(name, left - 1); });
+            throw e;
+          });
+        };
         var next = function(){
           if (!models.length) return Promise.reject(lastErr || new Error("no model"));
-          return callModel(models.shift(), parts).catch(function(e){
+          return tryModel(models.shift(), 2).catch(function(e){
             lastErr = e;
             if (e.status === 429 || e.status === 401 || (e.status === 403 && /not been used|disabled|not enabled/i.test(e.message))) throw e;
             return next();
@@ -833,6 +841,9 @@ function clockLeft(ms){
 function since(ms){ var m = Math.floor(ms / M); return m < 60 ? m + "분 경과" : Math.floor(m / 60) + "시간 " + (m % 60) + "분 경과"; }
 /* 리젠 보스 처치 소요시간(초): 다음 젠 = 출현 + 처치 소요 + 리젠 주기 */
 var KILL_SEC = {35:5, 40:10, 45:15, 55:20, 60:25, 65:30};
+/* 게임은 남은 시간을 분 단위로만 보여줌 ("1시간 43분 후" = 실제로는 1:43:00~1:43:59).
+   그 1분 범위의 가운데로 잡도록 30초를 더함. 늘 늦게 잡히면 줄이고, 늘 빨리 잡히면 늘리면 됨 */
+var SHOT_PAD = 30 * 1000;
 function killMs(b){ return (b && b.type === "respawn" && KILL_SEC[b.lv]) ? KILL_SEC[b.lv] * 1000 : 0; }
 function cycLabel(b){ var s = killMs(b) / 1000; return ivLabel(b.interval) + (b.interval && s ? " · 처치 " + s + "초" : ""); }
 function ivLabel(min){
@@ -1389,7 +1400,8 @@ function aiWhy(e){
   var why = /app check/i.test(m) ? "App Check(Fraud Defense) 연결을 확인해 주세요" :
             (st === 429 || /quota|resource_exhausted/i.test(m)) ? "오늘 무료 사용량을 다 썼거나 요청이 많아요" :
             (st === 403 || /not enabled|disabled|has not been used|permission/i.test(m)) ? "Firebase 콘솔에서 AI Logic(Gemini Developer API)이 켜져 있는지 확인해 주세요" :
-            /failed to fetch|network/i.test(m) ? "인터넷 연결 또는 브라우저 차단 설정을 확인해 주세요" : "자동 읽기에 실패했어요";
+            /failed to fetch|network/i.test(m) ? "인터넷 연결 또는 브라우저 차단 설정을 확인해 주세요" :
+            (st === 500 || st === 503 || /high demand|overloaded|unavailable|internal/i.test(m)) ? "AI 서버가 잠시 붐벼서 읽지 못했어요. 1~2분 뒤 '다시 읽기'를 눌러 보세요" : "자동 읽기에 실패했어요";
   return why + " (" + m.trim().slice(0, 120) + ")";
 }
 function stepRead(){
@@ -1398,7 +1410,7 @@ function stepRead(){
   var next = function(){
     if (i >= files.length) {
       var n = Object.keys(found).length;
-      if (!n) { stepTable({}, (errs.length ? errs[0] + ". " : "보스 시간을 찾지 못했어요. ") + MANUAL_MSG); return; }
+      if (!n) { stepTable({}, (errs.length ? errs[0] + ". " : "보스 시간을 찾지 못했어요. ") + MANUAL_MSG, true); return; }
       stepTable(found, n + "마리 보스를 읽어서 체크해 두었어요." + (errs.length ? " (" + errs.length + "장은 읽지 못했어요)" : "") + " 스크린샷과 비교해 틀린 곳만 고친 뒤 아래 '체크한 보스 저장'을 누르세요.");
       return;
     }
@@ -1416,7 +1428,7 @@ function sameSchedule(b, days, hours, mi){
   var a1 = b.days.slice().sort().join(","), a2 = days.slice().sort().join(","), h1 = b.hours.slice().sort(function(x, y){ return x - y; }).join(","), h2 = hours.slice().sort(function(x, y){ return x - y; }).join(",");
   return a1 === a2 && h1 === h2 && (b.minute || 0) === (mi || 0);
 }
-function stepTable(found, msg){
+function stepTable(found, msg, failed){
   var multi = shot.files.length > 1;
   function srcSel(sel){
     if (!multi) return "";
@@ -1438,7 +1450,8 @@ function stepTable(found, msg){
       '<div class="rn"><b>' + esc(b.name) + '</b> <span class="hint">' + RNAME[b.region] + '</span>' + tag + '</div><div class="when num"></div>' +
       '<div class="inp"><input class="field fdays" type="text" value="' + esc(daysText(valid ? days : b.days)) + '" style="width:72px" aria-label="요일"> 요일 <input class="field fhrs" type="text" value="' + esc((valid ? hours : b.hours).join(",")) + '" style="width:72px" aria-label="시"> 시 <input class="field fmin" type="number" min="0" max="59" value="' + mi + '" aria-label="분"> 분</div></div>';
   }
-  step('<div class="ask" style="font-size:14px">기준 시각 <b>' + (multi ? shot.files.length + '장 (' + shot.bases.map(hm).join(", ") + ')' : askDate(shot.bases[0])) + '</b><p class="hint">' + esc(msg) + '</p></div>' +
+  step('<div class="ask" style="font-size:14px">기준 시각 <b>' + (multi ? shot.files.length + '장 (' + shot.bases.map(hm).join(", ") + ')' : askDate(shot.bases[0])) + '</b><p class="hint">' + esc(msg) + '</p>' + (failed && window.BOSS_AI ? '<button class="btn" type="button" data-s="yes" style="margin-top:8px">↻ 다시 읽기</button>' : '') +
+    (multi ? '<p class="hint" style="margin-top:6px">장마다 찍은 시각이 달라요. 각 보스 줄 오른쪽에서 <b>그 보스가 찍힌 스크린샷 번호</b>를 골라 주세요. 한 보스를 고르면 같은 지역 보스도 같이 바뀌어요.</p>' : '') + '</div>' +
     '<div class="res-list">' +
     '<div class="res-sec">리젠 보스 <span class="hint">○시간 ○분 후 출현</span></div>' + respawnBosses().map(respRow).join("") +
     '<div class="res-sec">고정 출현 보스 <span class="hint">일정이 바뀐 보스만 체크돼요 (예: 월,목 / 21)</span></div>' + fixedBosses().map(fixRow).join("") +
@@ -1455,7 +1468,7 @@ function stepTable(found, msg){
       if (tr.getAttribute("data-t") === "r") {
         var b = find(tr.getAttribute("data-b")), base = rowBase(tr), lv = tr.querySelector(".lv").checked, h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
         if (lv) { var nx = base + (b.interval || 0) * M + killMs(b); w.textContent = b.interval ? "다음 " + dayLabel(nx, now) + " " + hm(nx) : "출현 중"; }
-        else w.textContent = (h !== "" || m !== "") ? (function(t){ return dayLabel(t, now) + " " + hm(t); })(base + (+h || 0) * H + (+m || 0) * M) : "—";
+        else w.textContent = (h !== "" || m !== "") ? (function(t){ return dayLabel(t, now) + " " + hm(t) + ":" + pad(k(t).getUTCSeconds()); })(base + (+h || 0) * H + (+m || 0) * M + SHOT_PAD) : "—";
       } else {
         var days = parseDays(tr.querySelector(".fdays").value), hours = parseHours(tr.querySelector(".fhrs").value), mi = +tr.querySelector(".fmin").value || 0;
         if (!days.length || !hours.length) { w.textContent = "요일·시각 확인"; return; }
@@ -1470,7 +1483,17 @@ function stepTable(found, msg){
     if (!e.target.classList.contains("ap")) tr.querySelector(".ap").checked = true;
     upd();
   });
-  list.addEventListener("change", upd);
+  list.addEventListener("change", function(e){
+    if (e.target.classList.contains("src")) {
+      var tr = e.target.closest(".res-row"), rg = (find(tr.getAttribute("data-b")) || {}).region, v = e.target.value;
+      e.target.setAttribute("data-set", "1");
+      list.querySelectorAll('.res-row[data-t="r"]').forEach(function(o){
+        var s2 = o.querySelector(".src"); if (!s2 || s2 === e.target || s2.getAttribute("data-set")) return;
+        if ((find(o.getAttribute("data-b")) || {}).region === rg) s2.value = v;
+      });
+    }
+    upd();
+  });
   upd();
 }
 function applyShot(){
@@ -1484,7 +1507,7 @@ function applyShot(){
       else {
         var h = tr.querySelector(".rh").value, m = tr.querySelector(".rm").value;
         if (h === "" && m === "") { bad.push(b.name); return; }
-        b.alive = false; b.anchor = base + (+h || 0) * H + (+m || 0) * M;
+        b.alive = false; b.anchor = base + (+h || 0) * H + (+m || 0) * M + SHOT_PAD;
       }
       used.push(base);
     } else {
